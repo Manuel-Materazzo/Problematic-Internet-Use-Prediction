@@ -104,10 +104,42 @@ class Trainer:
                 print("Pruned Optimal Boosting Rounds: ", pruned_optimal_boost_rounds)
                 print(best_rounds)
 
-        return optimal_boost_rounds
+        # Cross validate model with the optimal boosting round, to check on MAE discrepancies
+        if rounds is None and log_level > 0:
+            print("Generating MAE with optimal boosting rounds")
+            self.cross_validation(X, y, optimal_boost_rounds, log_level=1, **xgb_params)
 
+        return mean_mae_cv, optimal_boost_rounds
 
-    def classic_validation(self, X, y, **xgb_params):
+    def simple_cross_validation(self, X: DataFrame, y: Series, rounds=1000, **xgb_params) -> int:
+
+        print("WARNING: using this method can cause train data leakage")
+
+        processed_X = self.pipeline.fit_transform(X)
+
+        dtrain = xgb.DMatrix(processed_X, label=y)
+
+        cv_results = xgb.cv(
+            params=xgb_params,
+            dtrain=dtrain,
+            num_boost_round=rounds,
+            nfold=5,
+            metrics='mae',
+            early_stopping_rounds=5,
+            seed=0,
+            as_pandas=True)
+
+        # Extract the mean of the MAE from cross-validation results
+        mae_cv = cv_results[
+            'test-mae-mean'].min()  # optimal point (iteration) where the model achieved its best performance
+        best_round = cv_results[
+            'test-mae-mean'].idxmin()  # if you train the model again, same seed, no early stopping, you can put this index as num_boost_round to get same result
+
+        print("#{} Cross-Validation MAE: {}".format(best_round, mae_cv))
+
+        return best_round
+
+    def classic_validation(self, X: DataFrame, y: Series, **xgb_params) -> None:
         # Split into validation and training data
         train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=1)
         # Get trained model
