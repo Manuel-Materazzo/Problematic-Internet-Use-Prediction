@@ -6,13 +6,19 @@ from sklearn.model_selection import KFold, train_test_split
 from xgboost import XGBRegressor
 from sklearn.metrics import mean_absolute_error
 
+from src.data_trasformation_pipeline import DataTrasformationPipeline
+
 
 class Trainer:
 
-    def __init__(self, pipeline):
-        self.pipeline = pipeline
+    def __init__(self, pipeline: DataTrasformationPipeline):
+        self.pipeline: DataTrasformationPipeline = pipeline
 
-    def train_model(self, train_X, train_y, val_X=None, val_y=None, rounds=1000, **xgb_params):
+    def get_pipeline(self):
+        return self.pipeline
+
+    def train_model(self, train_X: DataFrame, train_y: Series, val_X: DataFrame = None, val_y: Series = None,
+                    rounds=1000, **xgb_params) -> XGBRegressor:
         processed_train_X = self.pipeline.fit_transform(train_X)
 
         # if we have validation sets, train with early stopping rounds
@@ -36,12 +42,18 @@ class Trainer:
 
         return model
 
-    def __cross_train(self, X, y, train_index, val_index, **xgb_params):
+    def __cross_train(self, X: DataFrame, y: Series, train_index: int, val_index: int, rounds=None,
+                      **xgb_params) -> (int, int):
         # split train and validation data
         train_X, val_X = X.iloc[train_index], X.iloc[val_index]
         train_y, val_y = y.iloc[train_index], y.iloc[val_index]
 
-        model = self.train_model(train_X, train_y, val_X, val_y, **xgb_params)
+        # if no rounds, train with early stopping
+        if rounds is None:
+            model = self.train_model(train_X, train_y, val_X, val_y, **xgb_params)
+        # else train normally
+        else:
+            model = self.train_model(train_X, train_y, rounds=rounds, **xgb_params)
 
         # re-process val_X to obtain MAE
         processed_val_X = self.pipeline.transform(val_X)
@@ -50,8 +62,12 @@ class Trainer:
         predictions = model.predict(processed_val_X)
         mae = mean_absolute_error(predictions, val_y)
 
-        # number of boosting rounds used in the best model, MAE
-        return model.best_iteration, mae
+        try:
+            # number of boosting rounds used in the best model, MAE
+            return model.best_iteration, mae
+        # if the model was trained without early stopping, return the provided training round
+        except AttributeError:
+            return rounds, mae
 
     def cross_validation(self, X, y, **xgb_params):
         # Initialize KFold
