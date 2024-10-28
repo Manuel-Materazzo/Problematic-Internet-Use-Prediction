@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import xgboost as xgb
+from pandas import DataFrame, Series
 from scipy.stats import trim_mean
 from sklearn.model_selection import KFold, train_test_split
 from xgboost import XGBRegressor
@@ -69,7 +70,7 @@ class Trainer:
         except AttributeError:
             return rounds, mae
 
-    def cross_validation(self, X, y, **xgb_params):
+    def cross_validation(self, X: DataFrame, y: Series, rounds=None, log_level=2, **xgb_params) -> (float, int):
         # Initialize KFold
         kf = KFold(
             n_splits=5,  # dataset divided into 5 folds, 4 for training and 1 for validation
@@ -83,7 +84,7 @@ class Trainer:
 
         # Loop through each fold
         for train_index, val_index in kf.split(X):
-            best_iteration, mae = self.__cross_train(X, y, train_index, val_index, **xgb_params)
+            best_iteration, mae = self.__cross_train(X, y, train_index, val_index, rounds=rounds, **xgb_params)
 
             best_rounds.append(best_iteration)
             cv_scores.append(mae)
@@ -94,11 +95,14 @@ class Trainer:
         optimal_boost_rounds = int(np.mean(best_rounds))
         pruned_optimal_boost_rounds = int(trim_mean(best_rounds, proportiontocut=0.1))  # trim extreme values
 
-        print("Cross-Validation MAE: ±{:,.0f}€".format(mean_mae_cv))
-        print(cv_scores)
-        print("Optimal Boosting Rounds: ", optimal_boost_rounds)
-        print("Pruned Optimal Boosting Rounds: ", pruned_optimal_boost_rounds)
-        print(best_rounds)
+        if log_level > 0:
+            print("Cross-Validation MAE: ±{:,.0f}€".format(mean_mae_cv))
+            if log_level > 1:
+                print(cv_scores)
+            print("Optimal Boosting Rounds: ", optimal_boost_rounds)
+            if log_level > 1:
+                print("Pruned Optimal Boosting Rounds: ", pruned_optimal_boost_rounds)
+                print(best_rounds)
 
         return optimal_boost_rounds
 
