@@ -13,7 +13,10 @@ class FunctionalImputer(BaseEstimator, TransformerMixin):
     def transform(self, X):
         X = X.copy()
 
-        X['Functional'] = X['Functional'].fillna('Typ')  # Assume typical unless deductions are warranted
+        try:
+            X['Functional'] = X['Functional'].fillna('Typ')  # Assume typical unless deductions are warranted
+        except KeyError:
+            print('KeyError')
 
         return X
 
