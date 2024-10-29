@@ -1,9 +1,11 @@
 import pandas as pd
+from pandas import DataFrame
 from sklearn.impute import SimpleImputer
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 from sklearn.base import BaseEstimator, TransformerMixin
+from xgboost import XGBRegressor
 
 
 class FunctionalImputer(BaseEstimator, TransformerMixin):
@@ -22,12 +24,12 @@ class FunctionalImputer(BaseEstimator, TransformerMixin):
 
 
 class DataTrasformationPipeline:
-    def __init__(self, X, imputation_enabled):
-        self.imputation_enabled = imputation_enabled
-        self.X = X
+    def __init__(self, X: DataFrame, imputation_enabled: bool):
+        self.imputation_enabled: bool = imputation_enabled
+        self.X: DataFrame = X
         self.pipeline = self.build_pipeline()
 
-    def build_pipeline(self):
+    def build_pipeline(self) -> Pipeline | ColumnTransformer:
         #TODO: extract categorical selection to static method
         # Select categorical columns
         categorical_cols = [cname for cname in self.X.columns if self.X[cname].dtype == "object"]
@@ -52,7 +54,7 @@ class DataTrasformationPipeline:
         categorical_transformer = Pipeline(steps=[
             ('imputer', SimpleImputer(strategy='most_frequent')),
             ('ordinal', categorical_encoder)
-        ])
+        ], memory=None)
 
         preprocessor = ColumnTransformer(transformers=[
                 ('num', numerical_transformer, numerical_cols),
@@ -63,16 +65,30 @@ class DataTrasformationPipeline:
         return Pipeline(steps=[
             ('functional_imputer', FunctionalImputer()),
             ('preprocessor', preprocessor)
-        ])
+        ], memory=None)
 
-    def fit_transform(self, dataframe):
+    def fit_transform(self, dataframe: DataFrame) -> DataFrame:
+        """
+        Wrapping function to fit and transform the dataframe.
+        :param dataframe:
+        :return:
+        """
         return pd.DataFrame(self.pipeline.fit_transform(dataframe))
 
-    def transform(self, dataframe):
+    def transform(self, dataframe: DataFrame) -> DataFrame:
+        """
+        Wrapping function to transform the dataframe.
+        :param dataframe:
+        :return:
+        """
         return pd.DataFrame(self.pipeline.transform(dataframe))
 
-    def get_pipeline_with_training(self, model):
-        # Create a complete pipeline, including model training
+    def get_pipeline_with_training(self, model: XGBRegressor) -> Pipeline:
+        """
+        Gets the pipeline with the added model training step
+        :param model:
+        :return:
+        """
         return Pipeline(steps=[
             ('preprocessor', self.pipeline),
             ('model', model)

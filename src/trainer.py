@@ -15,11 +15,26 @@ class Trainer:
     def __init__(self, pipeline: DataTrasformationPipeline):
         self.pipeline: DataTrasformationPipeline = pipeline
 
-    def get_pipeline(self):
+    def get_pipeline(self) -> DataTrasformationPipeline:
+        """
+        Returns the pipeline that gets used for training.
+        :return:
+        """
         return self.pipeline
 
     def train_model(self, train_X: DataFrame, train_y: Series, val_X: DataFrame = None, val_y: Series = None,
                     rounds=1000, **xgb_params) -> XGBRegressor:
+        """
+        Trains a XGBoost regressor on the provided training data.
+        When validation data is provided, the model is trained with early stopping.
+        :param train_X:
+        :param train_y:
+        :param val_X:
+        :param val_y:
+        :param rounds:
+        :param xgb_params:
+        :return:
+        """
         processed_train_X = self.pipeline.fit_transform(train_X)
 
         # if we have validation sets, train with early stopping rounds
@@ -45,6 +60,19 @@ class Trainer:
 
     def __cross_train(self, X: DataFrame, y: Series, train_index: int, val_index: int, rounds=None,
                       **xgb_params) -> (int, int):
+        """
+        Trains a XGBoost regressor on the provided training data by splitting it into training and validation sets.
+        The split function does not shuffle, and it's based on the provided indexes.
+        If no rounds are provided, the model is trained using early stopping and will return the optimal number of
+        boosting rounds alongside the MAE.
+        :param X:
+        :param y:
+        :param train_index:
+        :param val_index:
+        :param rounds:
+        :param xgb_params:
+        :return:
+        """
         # split train and validation data
         train_X, val_X = X.iloc[train_index], X.iloc[val_index]
         train_y, val_y = y.iloc[train_index], y.iloc[val_index]
@@ -66,11 +94,26 @@ class Trainer:
         try:
             # number of boosting rounds used in the best model, MAE
             return model.best_iteration, mae
-        # if the model was trained without early stopping, return the provided training round
+        # if the model was trained without early stopping, return the provided training rounds
         except AttributeError:
             return rounds, mae
 
     def cross_validation(self, X: DataFrame, y: Series, rounds=None, log_level=2, **xgb_params) -> (float, int):
+        """
+        Trains 5 XGBoost regressors on the provided training data by cross-validation.
+        Data is splitted into 5 folds, each model is trained on 4 folds and validated on 1 fold.
+        The validation fold is always different, so we are basically training and validating over the entire dataset.
+        MAE score and optimal boosting rounds of each model are then meaned to get overall values.
+        If no rounds are provided, the models are trained using early stopping and will return the optimal number of
+        boosting rounds alongside the MAE.
+
+        :param X:
+        :param y:
+        :param rounds:
+        :param log_level:
+        :param xgb_params:
+        :return:
+        """
         # Initialize KFold
         kf = KFold(
             n_splits=5,  # dataset divided into 5 folds, 4 for training and 1 for validation
@@ -111,9 +154,20 @@ class Trainer:
 
         return mean_mae_cv, optimal_boost_rounds
 
-    def simple_cross_validation(self, X: DataFrame, y: Series, rounds=1000, **xgb_params) -> int:
+    def simple_cross_validation(self, X: DataFrame, y: Series, rounds=1000, **xgb_params) -> (float, int):
+        """
+        Trains 5 XGBoost regressors on the provided training data by cross-validation.
+        This method uses default xgb.cv strategy for cross-validation.
+        X is preprocessed using fit_transform on the pipeline, this will probably cause
+        "Train-Test Contamination Data Leakage" and provide a MAE estimate with lower accuracy.
+        :param X:
+        :param y:
+        :param rounds:
+        :param xgb_params:
+        :return:
+        """
 
-        print("WARNING: using this method can cause train data leakage")
+        print("WARNING: using simple_cross_validation can cause train data leakage, prefer cross_validation instead")
 
         processed_X = self.pipeline.fit_transform(X)
 
@@ -137,9 +191,17 @@ class Trainer:
 
         print("#{} Cross-Validation MAE: {}".format(best_round, mae_cv))
 
-        return best_round
+        return mae_cv, best_round
 
-    def classic_validation(self, X: DataFrame, y: Series, **xgb_params) -> None:
+    def classic_validation(self, X: DataFrame, y: Series, **xgb_params) -> (float, int):
+        """
+        Trains a XGBoost regressor on the provided training data by splitting it into training and validation sets.
+        This uses early stopping and will return the optimal number of boosting rounds alongside the MAE.
+        :param X:
+        :param y:
+        :param xgb_params:
+        :return:
+        """
         # Split into validation and training data
         train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=1)
         # Get trained model
@@ -151,3 +213,5 @@ class Trainer:
         # Calculate MAE
         mae = mean_absolute_error(predictions, val_y)
         print("Validation MAE : ±{:,.0f}€".format(mae))
+
+        return mae, model.best_iteration

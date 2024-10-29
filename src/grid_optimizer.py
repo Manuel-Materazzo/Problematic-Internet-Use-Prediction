@@ -1,11 +1,15 @@
+from pandas import DataFrame, Series
 from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import Pipeline
 from xgboost import XGBRegressor
+
+from src.trainer import Trainer
 
 
 class GridOptimizer:
-    def __init__(self, trainer):
-        self.trainer = trainer
-        self.params = {
+    def __init__(self, trainer: Trainer):
+        self.trainer: Trainer = trainer
+        self.params: dict = {
             'objective': 'reg:squarederror',
             'learning_rate': 0.1,
             'max_depth': 5,
@@ -17,19 +21,37 @@ class GridOptimizer:
             'n_jobs': -1,  # Use all available cores
         }
 
-    def __get_full_pipeline(self, optimal_boosting_rounds):
-        # get a pipeline that includes model training
+    def __get_full_pipeline(self, optimal_boosting_rounds: int) -> Pipeline:
+        """
+        Gets a pipeline that includes model training
+        :param optimal_boosting_rounds:
+        :return:
+        """
         return self.trainer.get_pipeline().get_pipeline_with_training(XGBRegressor(
             random_state=0,
             n_estimators=optimal_boosting_rounds,
             **self.params
         ))
 
-    def __get_optimal_boost_rounds(self, X, y):
+    def __get_optimal_boost_rounds(self, X: DataFrame, y: Series) -> int:
+        """
+        Gets the optimal boost rounds for the provided data and the current params
+        :param X:
+        :param y:
+        :return:
+        """
         _, optimal_boosting_rounds = self.trainer.cross_validation(X, y, log_level=0, **self.params)
         return optimal_boosting_rounds
 
-    def tune(self, X, y, final_lr):
+    def tune(self, X: DataFrame, y: Series, final_lr: float) -> dict:
+        """
+        Calculates the best hyperparameters for the dataset by performing a grid search
+        GridSearch trains cross-validated model for each combination of hyperparameters, and picks the best based on MAE
+        :param X:
+        :param y:
+        :param final_lr:
+        :return:
+        """
         # get optimal boost rounds
         optimal_br = self.__get_optimal_boost_rounds(X, y)
 
@@ -59,7 +81,6 @@ class GridOptimizer:
         self.params['subsample'] = optimal_params['model__subsample']
         self.params['colsample_bytree'] = optimal_params['model__colsample_bytree']
 
-
         print("Step 4, searching for optimal reg_alpha:")
         optimal_params = self.__do_grid_search(self.__get_full_pipeline(optimal_br), X, y, {
             'model__reg_alpha': [0, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100]
@@ -70,9 +91,16 @@ class GridOptimizer:
 
         return self.params
 
-    def __do_grid_search(self, pipeline, X, y, param_grid):
-        grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring='neg_mean_absolute_error', verbose=1,
-                                   n_jobs=-1)
+    def __do_grid_search(self, pipeline: Pipeline, X: DataFrame, y: Series, param_grid: dict) -> dict:
+        """
+        Trains cross-validated model for each combination of the provided hyperparameters, and picks the best based on MAE
+        :param pipeline:
+        :param X:
+        :param y:
+        :param param_grid:
+        :return:
+        """
+        grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring='neg_mean_absolute_error', verbose=1, n_jobs=-1)
         grid_search.fit(X, y)
         print("Best parameters found: ", grid_search.best_params_)
         print("Best MAE: ", -grid_search.best_score_)

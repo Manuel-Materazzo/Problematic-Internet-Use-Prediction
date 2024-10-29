@@ -2,7 +2,7 @@ import pandas as pd
 
 from src.data_trasformation_pipeline import DataTrasformationPipeline
 from src.trainer import Trainer
-#from src.grid_optimizer import GridOptimizer
+from src.manual_grid_optimizer import GridOptimizer
 
 
 def load_data():
@@ -23,21 +23,26 @@ pipeline = DataTrasformationPipeline(X, True)
 
 trainer = Trainer(pipeline)
 
-
 params = {
     'n_jobs': -1,  # Use all available cores
     'objective': 'reg:squarederror',
     'learning_rate': 0.03,
 }
 
-#optimizer = GridOptimizer(pipeline, trainer)
-
-# Train model baseline
-print("Manual Baseline:")
-boost_rounds = trainer.cross_validation(X, y, **params)
+optimizer = GridOptimizer(trainer)
 
 # optimize parameters
-#optimizer.tune(X, y)
+optimized_params = optimizer.tune(X, y, 0.03)
+
+# Train model baseline
+# print()
+# print("Before optimization:")
+# _, boost_rounds = trainer.cross_validation(X, y, log_level=1, **params)
+# print()
+
+print("After optimization:")
+_, boost_rounds = trainer.cross_validation(X, y, log_level=1, **optimized_params)
+print()
 
 # fit complete_model on all data from the training data
-#complete_model = trainer.train_model(X, y, rounds=boost_rounds, **params)
+complete_model = trainer.train_model(X, y, rounds=boost_rounds, **params)
