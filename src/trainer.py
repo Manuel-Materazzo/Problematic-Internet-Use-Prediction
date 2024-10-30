@@ -154,7 +154,7 @@ class Trainer:
 
         return mean_mae_cv, optimal_boost_rounds
 
-    def simple_cross_validation(self, X: DataFrame, y: Series, rounds=1000, **xgb_params) -> (float, int):
+    def simple_cross_validation(self, X: DataFrame, y: Series, rounds=1000, log_level=1, **xgb_params) -> (float, int):
         """
         Trains 5 XGBoost regressors on the provided training data by cross-validation.
         This method uses default xgb.cv strategy for cross-validation.
@@ -167,7 +167,8 @@ class Trainer:
         :return:
         """
 
-        print("WARNING: using simple_cross_validation can cause train data leakage, prefer cross_validation instead")
+        print("WARNING: using simple_cross_validation can cause train data leakage, prefer cross_validation or "
+              "classic_validation instead")
 
         processed_X = self.pipeline.fit_transform(X)
 
@@ -189,14 +190,16 @@ class Trainer:
         best_round = cv_results[
             'test-mae-mean'].idxmin()  # if you train the model again, same seed, no early stopping, you can put this index as num_boost_round to get same result
 
-        print("#{} Cross-Validation MAE: {}".format(best_round, mae_cv))
+        if log_level > 0:
+            print("#{} Cross-Validation MAE: {}".format(best_round, mae_cv))
 
         return mae_cv, best_round
 
-    def classic_validation(self, X: DataFrame, y: Series, **xgb_params) -> (float, int):
+    def classic_validation(self, X: DataFrame, y: Series, log_level=1, **xgb_params) -> (float, int):
         """
         Trains a XGBoost regressor on the provided training data by splitting it into training and validation sets.
         This uses early stopping and will return the optimal number of boosting rounds alongside the MAE.
+        :param log_level:
         :param X:
         :param y:
         :param xgb_params:
@@ -212,6 +215,8 @@ class Trainer:
         predictions = model.predict(processed_val_X)
         # Calculate MAE
         mae = mean_absolute_error(predictions, val_y)
-        print("Validation MAE : ±{:,.0f}€".format(mae))
+
+        if log_level > 0:
+            print("Validation MAE : {}".format(mae))
 
         return mae, model.best_iteration

@@ -41,3 +41,18 @@ class HyperparameterOptimizer(ABC):
         """
         _, optimal_boosting_rounds = self.trainer.cross_validation(X, y, log_level=0, **self.params)
         return optimal_boosting_rounds
+
+    def space_to_params(self, space: dict) -> dict:
+        return {
+            'objective': 'reg:squarederror',
+            'learning_rate': 0.03,
+            'max_depth': int(space['max_depth']),
+            'min_child_weight': int(space['min_child_weight']),
+            'gamma': space['gamma'],
+            'colsample_bytree': space['colsample_bytree'],
+            'subsample': space['subsample'],
+            'reg_alpha': space['reg_alpha'],
+            'reg_lambda': space['reg_lambda'],
+            'scale_pos_weight': 1,
+            'n_jobs': -1,
+        }
