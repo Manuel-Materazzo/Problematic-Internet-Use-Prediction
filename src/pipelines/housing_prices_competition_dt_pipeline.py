@@ -27,7 +27,7 @@ class HousingPricesCompetitionDTPipeline(DTPipeline):
     def __init__(self, X: DataFrame, imputation_enabled: bool):
         super().__init__(X, imputation_enabled)
 
-    def __build_pipeline(self) -> Pipeline | ColumnTransformer:
+    def build_pipeline(self) -> Pipeline | ColumnTransformer:
 
         # Encoding for categorical data
         # categorical_encoder = OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1)

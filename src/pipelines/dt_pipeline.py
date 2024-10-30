@@ -9,16 +9,17 @@ from xgboost import XGBRegressor
 class DTPipeline(ABC):
 
     def __init__(self, X: DataFrame, imputation_enabled: bool):
-        self.imputation_enabled: bool = imputation_enabled
-        self.pipeline = self.__build_pipeline()
-
         # Select categorical columns
         self.categorical_cols = [cname for cname in X.columns if X[cname].dtype == "object"]
         # Select numerical columns
         self.numerical_cols = [cname for cname in X.columns if X[cname].dtype in ['int64', 'float64']]
 
+        self.imputation_enabled: bool = imputation_enabled
+        self.pipeline = self.build_pipeline()
+
+
     @abstractmethod
-    def __build_pipeline(self) -> Pipeline | ColumnTransformer:
+    def build_pipeline(self) -> Pipeline | ColumnTransformer:
         pass
 
     def fit_transform(self, dataframe: DataFrame) -> DataFrame:
