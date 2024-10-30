@@ -7,15 +7,15 @@ from sklearn.model_selection import KFold, train_test_split
 from xgboost import XGBRegressor
 from sklearn.metrics import mean_absolute_error
 
-from src.data_trasformation_pipeline import DataTrasformationPipeline
+from src.pipelines.dt_pipeline import DTPipeline
 
 
 class Trainer:
 
-    def __init__(self, pipeline: DataTrasformationPipeline):
-        self.pipeline: DataTrasformationPipeline = pipeline
+    def __init__(self, pipeline: DTPipeline):
+        self.pipeline: DTPipeline = pipeline
 
-    def get_pipeline(self) -> DataTrasformationPipeline:
+    def get_pipeline(self) -> DTPipeline:
         """
         Returns the pipeline that gets used for training.
         :return:

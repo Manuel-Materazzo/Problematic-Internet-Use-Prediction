@@ -1,11 +1,11 @@
-import pandas as pd
 from pandas import DataFrame
 from sklearn.impute import SimpleImputer
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 from sklearn.base import BaseEstimator, TransformerMixin
-from xgboost import XGBRegressor
+
+from src.pipelines.dt_pipeline import DTPipeline
 
 
 class FunctionalImputer(BaseEstimator, TransformerMixin):
@@ -23,19 +23,11 @@ class FunctionalImputer(BaseEstimator, TransformerMixin):
         return X
 
 
-class DataTrasformationPipeline:
+class HousingPricesCompetitionDTPipeline(DTPipeline):
     def __init__(self, X: DataFrame, imputation_enabled: bool):
-        self.imputation_enabled: bool = imputation_enabled
-        self.X: DataFrame = X
-        self.pipeline = self.build_pipeline()
+        super().__init__(X, imputation_enabled)
 
-    def build_pipeline(self) -> Pipeline | ColumnTransformer:
-        #TODO: extract categorical selection to static method
-        # Select categorical columns
-        categorical_cols = [cname for cname in self.X.columns if self.X[cname].dtype == "object"]
-
-        # Select numerical columns
-        numerical_cols = [cname for cname in self.X.columns if self.X[cname].dtype in ['int64', 'float64']]
+    def __build_pipeline(self) -> Pipeline | ColumnTransformer:
 
         # Encoding for categorical data
         # categorical_encoder = OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1)
@@ -44,7 +36,7 @@ class DataTrasformationPipeline:
         # if imputation is disabled, just encode categorical columns
         if not self.imputation_enabled:
             return ColumnTransformer(transformers=[
-                ('cat', categorical_encoder, categorical_cols)
+                ('cat', categorical_encoder, self.categorical_cols)
             ])
 
         # Preprocessing for numerical data
@@ -57,8 +49,8 @@ class DataTrasformationPipeline:
         ], memory=None)
 
         preprocessor = ColumnTransformer(transformers=[
-                ('num', numerical_transformer, numerical_cols),
-                ('cat', categorical_transformer, categorical_cols)
+                ('num', numerical_transformer, self.numerical_cols),
+                ('cat', categorical_transformer, self.categorical_cols)
         ])
 
         # Bundle preprocessing
@@ -66,30 +58,3 @@ class DataTrasformationPipeline:
             ('functional_imputer', FunctionalImputer()),
             ('preprocessor', preprocessor)
         ], memory=None)
-
-    def fit_transform(self, dataframe: DataFrame) -> DataFrame:
-        """
-        Wrapping function to fit and transform the dataframe.
-        :param dataframe:
-        :return:
-        """
-        return pd.DataFrame(self.pipeline.fit_transform(dataframe))
-
-    def transform(self, dataframe: DataFrame) -> DataFrame:
-        """
-        Wrapping function to transform the dataframe.
-        :param dataframe:
-        :return:
-        """
-        return pd.DataFrame(self.pipeline.transform(dataframe))
-
-    def get_pipeline_with_training(self, model: XGBRegressor) -> Pipeline:
-        """
-        Gets the pipeline with the added model training step
-        :param model:
-        :return:
-        """
-        return Pipeline(steps=[
-            ('preprocessor', self.pipeline),
-            ('model', model)
-        ])

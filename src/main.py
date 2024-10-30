@@ -1,8 +1,8 @@
 import pandas as pd
 
-from src.data_trasformation_pipeline import DataTrasformationPipeline
+from src.pipelines.housing_prices_competition_dt_pipeline import HousingPricesCompetitionDTPipeline
 from src.trainer import Trainer
-from src.manual_grid_optimizer import GridOptimizer
+from src.hyperparameter_optimizers.accurate_grid_optimizer import AccurateGridOptimizer
 
 
 def load_data():
@@ -19,7 +19,7 @@ def load_data():
 
 X, y = load_data()
 
-pipeline = DataTrasformationPipeline(X, True)
+pipeline = HousingPricesCompetitionDTPipeline(X, True)
 
 trainer = Trainer(pipeline)
 
@@ -29,7 +29,7 @@ params = {
     'learning_rate': 0.03,
 }
 
-optimizer = GridOptimizer(trainer)
+optimizer = AccurateGridOptimizer(trainer)
 
 # optimize parameters
 optimized_params = optimizer.tune(X, y, 0.03)

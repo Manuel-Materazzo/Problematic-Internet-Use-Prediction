@@ -3,23 +3,13 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
 from xgboost import XGBRegressor
 
+from src.hyperparameter_optimizers.hp_optimizer import HyperparameterOptimizer
 from src.trainer import Trainer
 
 
-class GridOptimizer:
+class BalancedGridOptimizer(HyperparameterOptimizer):
     def __init__(self, trainer: Trainer):
-        self.trainer: Trainer = trainer
-        self.params: dict = {
-            'objective': 'reg:squarederror',
-            'learning_rate': 0.1,
-            'max_depth': 5,
-            'min_child_weight': 1,
-            'gamma': 0,
-            'subsample': 0.8,
-            'colsample_bytree': 0.8,
-            'scale_pos_weight': 1,
-            'n_jobs': -1,  # Use all available cores
-        }
+        super().__init__(trainer)
 
     def __get_full_pipeline(self, optimal_boosting_rounds: int) -> Pipeline:
         """
@@ -33,20 +23,10 @@ class GridOptimizer:
             **self.params
         ))
 
-    def __get_optimal_boost_rounds(self, X: DataFrame, y: Series) -> int:
-        """
-        Gets the optimal boost rounds for the provided data and the current params
-        :param X:
-        :param y:
-        :return:
-        """
-        _, optimal_boosting_rounds = self.trainer.cross_validation(X, y, log_level=0, **self.params)
-        return optimal_boosting_rounds
-
     def tune(self, X: DataFrame, y: Series, final_lr: float) -> dict:
         """
         Calculates the best hyperparameters for the dataset by performing a grid search
-        GridSearch trains cross-validated model for each combination of hyperparameters, and picks the best based on MAE
+        Trains a cross-validated model for each combination of hyperparameters, and picks the best based on MAE
         :param X:
         :param y:
         :param final_lr:
@@ -91,7 +71,7 @@ class GridOptimizer:
 
         return self.params
 
-    def __do_grid_search(self, pipeline: Pipeline, X: DataFrame, y: Series, param_grid: dict) -> dict:
+    def __do_grid_search(self, pipeline: Pipeline, X: DataFrame, y: Series, param_grid: dict, log_level=1) -> dict:
         """
         Trains cross-validated model for each combination of the provided hyperparameters, and picks the best based on MAE
         :param pipeline:
@@ -102,15 +82,17 @@ class GridOptimizer:
         """
         grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring='neg_mean_absolute_error', verbose=1, n_jobs=-1)
         grid_search.fit(X, y)
-        print("Best parameters found: ", grid_search.best_params_)
-        print("Best MAE: ", -grid_search.best_score_)
-        print()
 
-        # Print all parameters and corresponding MAE
-        # results = grid_search.cv_results_
-        # for i in range(len(results['params'])):
-        #     print(f"Parameters: {results['params'][i]}")
-        #     print(f"Mean Absolute Error (MAE): {abs(results['mean_test_score'][i])}")
-        #     print()
+        if log_level > 0:
+            print("Best parameters found: ", grid_search.best_params_)
+            print("Best MAE: ", -grid_search.best_score_)
+
+        if log_level > 1:
+            # Print all parameters and corresponding MAE
+            results = grid_search.cv_results_
+            for i in range(len(results['params'])):
+                print(f"Parameters: {results['params'][i]}")
+                print(f"Mean Absolute Error (MAE): {abs(results['mean_test_score'][i])}")
+                print()
 
         return grid_search.best_params_
