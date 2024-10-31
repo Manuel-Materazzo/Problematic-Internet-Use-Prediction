@@ -20,7 +20,7 @@ class AccurateGridOptimizer(HyperparameterOptimizer):
         :return:
         """
         # get optimal boost rounds
-        optimal_br = self.__get_optimal_boost_rounds(X, y)
+        optimal_br = self.get_optimal_boost_rounds(X, y)
 
         print("Step 1, searching for optimal max_depth and min_child_weight:")
         self.params.update(
@@ -38,7 +38,7 @@ class AccurateGridOptimizer(HyperparameterOptimizer):
         )
 
         # Recalibrate boosting rounds
-        optimal_br = self.__get_optimal_boost_rounds(X, y)
+        optimal_br = self.get_optimal_boost_rounds(X, y)
 
         print("Step 3, searching for optimal subsample and colsample_bytree:")
         self.params.update(
@@ -54,6 +54,14 @@ class AccurateGridOptimizer(HyperparameterOptimizer):
                 'reg_alpha': [0, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100]
             })
         )
+
+        # No worky, always return 0.1 despite best result lying elsewhere
+        # print("Step 5, searching for optimal learning_rate:")
+        # self.params.update(
+        #     self.__do_grid_search(X, y, optimal_br, {
+        #         'learning_rate': [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1]
+        #     })
+        # )
 
         self.params['learning_rate'] = final_lr
 

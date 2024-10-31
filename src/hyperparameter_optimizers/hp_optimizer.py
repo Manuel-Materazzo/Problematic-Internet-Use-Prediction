@@ -32,7 +32,7 @@ class HyperparameterOptimizer(ABC):
         """
         pass
 
-    def __get_optimal_boost_rounds(self, X: DataFrame, y: Series) -> int:
+    def get_optimal_boost_rounds(self, X: DataFrame, y: Series) -> int:
         """
         Gets the optimal boost rounds for the provided data and the current params
         :param X:
