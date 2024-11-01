@@ -42,10 +42,10 @@ class DTPipeline(ABC):
         :return:
         """
         imputed_dataframe = pd.DataFrame(self.pipeline.transform(dataframe))
-        if len(imputed_dataframe.columns) != len(dataframe.columns):
-            print("Column count mismatch, skipping name restoration")
-        else:
+        # restore column names
+        if len(imputed_dataframe.columns) == len(dataframe.columns):
             imputed_dataframe.columns = dataframe.columns
+        #TODO: restore column names edited by OneHotEncoder
         return imputed_dataframe
 
     def get_pipeline_with_training(self, model: XGBRegressor) -> Pipeline:
