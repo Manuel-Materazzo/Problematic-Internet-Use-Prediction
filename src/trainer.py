@@ -1,19 +1,33 @@
 import pandas as pd
 import numpy as np
 import xgboost as xgb
+import seaborn as sns
+import matplotlib.pyplot as plt
 from pandas import DataFrame, Series
 from scipy.stats import trim_mean
 from sklearn.model_selection import KFold, train_test_split
 from xgboost import XGBRegressor
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_error, confusion_matrix
 
 from src.pipelines.dt_pipeline import DTPipeline
+
+
+def show_confusion_matrix(real_values: Series, predictions):
+    print(real_values.values)
+    print(predictions)
+    cm = confusion_matrix(real_values, predictions)
+    sns.heatmap(cm, annot=True, fmt='', cmap='Blues')
+    plt.title('Confusion Matrix')
+    plt.xlabel('Predicted')
+    plt.ylabel('Real Data')
+    plt.show()
 
 
 class Trainer:
 
     def __init__(self, pipeline: DTPipeline):
         self.pipeline: DTPipeline = pipeline
+        self.model = None
 
     def get_pipeline(self) -> DTPipeline:
         """
@@ -79,21 +93,21 @@ class Trainer:
 
         # if no rounds, train with early stopping
         if rounds is None:
-            model = self.train_model(train_X, train_y, val_X, val_y, **xgb_params)
+            self.model = self.train_model(train_X, train_y, val_X, val_y, **xgb_params)
         # else train normally
         else:
-            model = self.train_model(train_X, train_y, rounds=rounds, **xgb_params)
+            self.model = self.train_model(train_X, train_y, rounds=rounds, **xgb_params)
 
         # re-process val_X to obtain MAE
         processed_val_X = self.pipeline.transform(val_X)
 
         # Predict and calculate MAE
-        predictions = model.predict(processed_val_X)
+        predictions = self.model.predict(processed_val_X)
         mae = mean_absolute_error(predictions, val_y)
 
         try:
             # number of boosting rounds used in the best model, MAE
-            return model.best_iteration, mae
+            return self.model.best_iteration, mae
         # if the model was trained without early stopping, return the provided training rounds
         except AttributeError:
             return rounds, mae
@@ -208,15 +222,36 @@ class Trainer:
         # Split into validation and training data
         train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=1)
         # Get trained model
-        model = self.train_model(train_X, train_y, val_X, val_y, **xgb_params)
+        self.model = self.train_model(train_X, train_y, val_X, val_y, **xgb_params)
         # preprocess validation data
         processed_val_X = pd.DataFrame(self.pipeline.transform(val_X))
         # Predict validation y using validation X
-        predictions = model.predict(processed_val_X)
+        predictions = self.model.predict(processed_val_X)
         # Calculate MAE
         mae = mean_absolute_error(predictions, val_y)
-
+        # TODO: ouptut confusion matrix with XGBClassifier
+        # show_confusion_matrix(val_y, predictions)
         if log_level > 0:
             print("Validation MAE : {}".format(mae))
 
-        return mae, model.best_iteration
+        return mae, self.model.best_iteration
+
+    def show_feature_importance(self, X: DataFrame):
+        if self.model is None:
+            print("No model has been fitted")
+            return
+
+        features = list(X.columns)  # Extract original features
+        importances = self.model.feature_importances_
+
+        feature_importances = sorted(zip(importances, features), reverse=False)
+        sorted_importances, sorted_features = zip(*feature_importances)
+
+        print(sorted_importances, sorted_features)
+
+        #TODO: show feature names on the plot
+        plt.figure(figsize=(12, 6))
+        plt.title('Relative Feature Importance')
+        plt.barh(range(len(sorted_importances)), sorted_importances, color='b', align='center')
+        plt.yticks(range(len(sorted_features)), sorted_features)
+        plt.show()
