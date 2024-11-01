@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from pandas import DataFrame
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder
 from xgboost import XGBRegressor
 
 
@@ -17,7 +18,6 @@ class DTPipeline(ABC):
         self.imputation_enabled: bool = imputation_enabled
         self.pipeline = self.build_pipeline()
 
-
     @abstractmethod
     def build_pipeline(self) -> Pipeline | ColumnTransformer:
         pass
@@ -28,7 +28,12 @@ class DTPipeline(ABC):
         :param dataframe:
         :return:
         """
-        return pd.DataFrame(self.pipeline.fit_transform(dataframe))
+        imputed_dataframe = pd.DataFrame(self.pipeline.fit_transform(dataframe))
+        # restore column names
+        if len(imputed_dataframe.columns) == len(dataframe.columns):
+            imputed_dataframe.columns = dataframe.columns
+        #TODO: restore column names edited by OneHotEncoder
+        return imputed_dataframe
 
     def transform(self, dataframe: DataFrame) -> DataFrame:
         """
@@ -36,7 +41,12 @@ class DTPipeline(ABC):
         :param dataframe:
         :return:
         """
-        return pd.DataFrame(self.pipeline.transform(dataframe))
+        imputed_dataframe = pd.DataFrame(self.pipeline.transform(dataframe))
+        if len(imputed_dataframe.columns) != len(dataframe.columns):
+            print("Column count mismatch, skipping name restoration")
+        else:
+            imputed_dataframe.columns = dataframe.columns
+        return imputed_dataframe
 
     def get_pipeline_with_training(self, model: XGBRegressor) -> Pipeline:
         """
@@ -48,3 +58,23 @@ class DTPipeline(ABC):
             ('preprocessor', self.pipeline),
             ('model', model)
         ])
+
+    def find_one_hot_encoder(self, transformer):
+        """
+        Checks if the pipeline contains one hot encoder and returns the instance.
+        :param pipeline:
+        :return:
+        """
+        if isinstance(transformer, Pipeline):
+            for name, step in transformer.steps:
+                result = self.find_one_hot_encoder(step)
+                if result is not None:
+                    return result
+        elif isinstance(transformer, ColumnTransformer):
+            for name, trans, columns in transformer.transformers_:
+                result = self.find_one_hot_encoder(trans)
+                if result is not None:
+                    return result
+        elif isinstance(transformer, OneHotEncoder):
+            return transformer
+        return None
