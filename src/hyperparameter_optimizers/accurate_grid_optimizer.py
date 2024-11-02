@@ -103,6 +103,6 @@ class AccurateGridOptimizer(HyperparameterOptimizer):
         if log_level > 1:
             # Print all results
             for params, mae in results:
-                print(f"Parameters: {params}, MAE: ±{mae:.0f}€")
+                print(f"Parameters: {params}, MAE: {mae}")
 
         return best_params

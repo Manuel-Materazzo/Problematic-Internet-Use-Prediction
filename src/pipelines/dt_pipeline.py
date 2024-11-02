@@ -29,10 +29,6 @@ class DTPipeline(ABC):
         :return:
         """
         imputed_dataframe = pd.DataFrame(self.pipeline.fit_transform(dataframe))
-        # restore column names
-        if len(imputed_dataframe.columns) == len(dataframe.columns):
-            imputed_dataframe.columns = dataframe.columns
-        #TODO: restore column names edited by OneHotEncoder
         return imputed_dataframe
 
     def transform(self, dataframe: DataFrame) -> DataFrame:
@@ -42,10 +38,6 @@ class DTPipeline(ABC):
         :return:
         """
         imputed_dataframe = pd.DataFrame(self.pipeline.transform(dataframe))
-        # restore column names
-        if len(imputed_dataframe.columns) == len(dataframe.columns):
-            imputed_dataframe.columns = dataframe.columns
-        #TODO: restore column names edited by OneHotEncoder
         return imputed_dataframe
 
     def get_pipeline_with_training(self, model: XGBRegressor) -> Pipeline:

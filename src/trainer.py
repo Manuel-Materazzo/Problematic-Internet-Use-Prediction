@@ -153,7 +153,7 @@ class Trainer:
         pruned_optimal_boost_rounds = int(trim_mean(best_rounds, proportiontocut=0.1))  # trim extreme values
 
         if log_level > 0:
-            print("Cross-Validation MAE: ±{:,.0f}€".format(mean_mae_cv))
+            print("Cross-Validation MAE: {}".format(mean_mae_cv))
             if log_level > 1:
                 print(cv_scores)
             print("Optimal Boosting Rounds: ", optimal_boost_rounds)
