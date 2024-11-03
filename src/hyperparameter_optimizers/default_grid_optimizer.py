@@ -4,7 +4,7 @@ from sklearn.pipeline import Pipeline
 from xgboost import XGBRegressor
 
 from src.hyperparameter_optimizers.hp_optimizer import HyperparameterOptimizer
-from src.trainer import Trainer
+from src.trainers.trainer import Trainer
 
 
 class BalancedGridOptimizer(HyperparameterOptimizer):

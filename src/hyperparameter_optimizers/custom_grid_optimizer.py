@@ -3,7 +3,7 @@ import itertools
 from pandas import DataFrame, Series
 
 from src.hyperparameter_optimizers.hp_optimizer import HyperparameterOptimizer
-from src.trainer import Trainer
+from src.trainers.trainer import Trainer
 
 
 class AccurateGridOptimizer(HyperparameterOptimizer):
@@ -89,7 +89,7 @@ class AccurateGridOptimizer(HyperparameterOptimizer):
             full_params = self.params.copy()
             full_params.update(params)
 
-            mae, _ = self.trainer.cross_validation(X, y, log_level=0, rounds=optimal_boosting_rounds, **full_params)
+            mae, _ = self.trainer.validate_model(X, y, log_level=0, rounds=optimal_boosting_rounds, **full_params)
             results.append((params, mae))
 
             if mae < best_score:
