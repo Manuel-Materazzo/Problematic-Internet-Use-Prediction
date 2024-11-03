@@ -6,7 +6,7 @@ from src.hyperparameter_optimizers.hp_optimizer import HyperparameterOptimizer
 from src.trainers.trainer import Trainer
 
 
-class AccurateGridOptimizer(HyperparameterOptimizer):
+class CustomGridOptimizer(HyperparameterOptimizer):
     def __init__(self, trainer: Trainer):
         super().__init__(trainer)
 
