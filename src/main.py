@@ -1,8 +1,11 @@
 import pandas as pd
-
+import time
 from src.pipelines.housing_prices_competition_dt_pipeline import HousingPricesCompetitionDTPipeline
-from src.trainer import Trainer
-from src.hyperparameter_optimizers.accurate_grid_optimizer import AccurateGridOptimizer
+from src.trainers.simple_trainer import SimpleTrainer
+from src.trainers.fast_cross_trainer import FastCrossTrainer
+from src.trainers.accurate_cross_trainer import AccurateCrossTrainer
+from src.trainers.cached_accurate_cross_trainer import CachedAccurateCrossTrainer
+from src.hyperparameter_optimizers.custom_grid_optimizer import CustomGridOptimizer
 
 
 def load_data():
@@ -21,28 +24,19 @@ X, y = load_data()
 
 pipeline = HousingPricesCompetitionDTPipeline(X, True)
 
-trainer = Trainer(pipeline)
+trainer = CachedAccurateCrossTrainer(pipeline, X, y)
 
-params = {
-    'n_jobs': -1,  # Use all available cores
-    'objective': 'reg:squarederror',
-    'learning_rate': 0.03,
-}
-
-optimizer = AccurateGridOptimizer(trainer)
+optimizer = CustomGridOptimizer(trainer)
 
 # optimize parameters
+start = time.time()
 optimized_params = optimizer.tune(X, y, 0.03)
+end = time.time()
 
-# Train model baseline
-# print()
-# print("Before optimization:")
-# _, boost_rounds = trainer.cross_validation(X, y, log_level=1, **params)
-# print()
+print("Tuning took {} seconds".format(end - start))
 
-print("After optimization:")
-_, boost_rounds = trainer.cross_validation(X, y, log_level=1, **optimized_params)
+_, boost_rounds = trainer.validate_model(X, y, log_level=1, **optimized_params)
 print()
 
 # fit complete_model on all data from the training data
-complete_model = trainer.train_model(X, y, rounds=boost_rounds, **params)
+# complete_model = trainer.train_model(X, y, rounds=boost_rounds, **params)
