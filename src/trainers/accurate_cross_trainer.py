@@ -2,16 +2,16 @@ import numpy as np
 from pandas import DataFrame, Series
 from scipy.stats import trim_mean
 from sklearn.model_selection import KFold
-from sklearn.metrics import mean_absolute_error
 
+from src.enums.accuracy_metric import AccuracyMetric
 from src.pipelines.dt_pipeline import DTPipeline
 from src.trainers.trainer import Trainer
 
 
 class AccurateCrossTrainer(Trainer):
 
-    def __init__(self, pipeline: DTPipeline):
-        super().__init__(pipeline)
+    def __init__(self, pipeline: DTPipeline, metric: AccuracyMetric = AccuracyMetric.MAE):
+        super().__init__(pipeline, metric=metric)
 
     def __cross_train(self, X: DataFrame, y: Series, train_index: int, val_index: int, rounds=None,
                       **xgb_params) -> (int, int):
@@ -44,14 +44,14 @@ class AccurateCrossTrainer(Trainer):
 
         # Predict and calculate MAE
         predictions = self.model.predict(processed_val_X)
-        mae = mean_absolute_error(predictions, val_y)
+        accuracy = self.calculate_accuracy(predictions, val_y)
 
         try:
             # number of boosting rounds used in the best model, MAE
-            return self.model.best_iteration, mae
+            return self.model.best_iteration, accuracy
         # if the model was trained without early stopping, return the provided training rounds
         except AttributeError:
-            return rounds, mae
+            return rounds, accuracy
 
     def validate_model(self, X: DataFrame, y: Series, rounds=None, log_level=2, **xgb_params) -> (float, int):
         """
@@ -87,14 +87,14 @@ class AccurateCrossTrainer(Trainer):
             best_rounds.append(best_iteration)
             cv_scores.append(mae)
 
-        # Calculate the mean MAE from cross-validation
-        mean_mae_cv = np.mean(cv_scores)
+        # Calculate the mean accuracy from cross-validation
+        mean_accuracy = np.mean(cv_scores)
         # Calculate optimal boosting rounds
         optimal_boost_rounds = int(np.mean(best_rounds))
         pruned_optimal_boost_rounds = int(trim_mean(best_rounds, proportiontocut=0.1))  # trim extreme values
 
         if log_level > 0:
-            print("Cross-Validation MAE: {}".format(mean_mae_cv))
+            print("Cross-Validation {}: {}".format(self.metric.value, mean_accuracy))
             if log_level > 1:
                 print(cv_scores)
             print("Optimal Boosting Rounds: ", optimal_boost_rounds)
@@ -104,7 +104,7 @@ class AccurateCrossTrainer(Trainer):
 
         # Cross validate model with the optimal boosting round, to check on MAE discrepancies
         if rounds is None and log_level > 0:
-            print("Generating MAE with optimal boosting rounds")
+            print("Generating {} with optimal boosting rounds".format(self.metric.value))
             self.validate_model(X, y, optimal_boost_rounds, log_level=1, **xgb_params)
 
-        return mean_mae_cv, optimal_boost_rounds
+        return mean_accuracy, optimal_boost_rounds

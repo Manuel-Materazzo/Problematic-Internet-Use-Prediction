@@ -1,14 +1,15 @@
 import xgboost as xgb
 from pandas import DataFrame, Series
 
+from src.enums.accuracy_metric import AccuracyMetric
 from src.pipelines.dt_pipeline import DTPipeline
 from src.trainers.trainer import Trainer
 
 
 class FastCrossTrainer(Trainer):
 
-    def __init__(self, pipeline: DTPipeline):
-        super().__init__(pipeline)
+    def __init__(self, pipeline: DTPipeline, metric: AccuracyMetric = AccuracyMetric.MAE):
+        super().__init__(pipeline, metric=metric)
 
     def validate_model(self, X: DataFrame, y: Series, rounds=1000, log_level=1, **xgb_params) -> (float, int):
         """
@@ -35,18 +36,18 @@ class FastCrossTrainer(Trainer):
             dtrain=dtrain,
             num_boost_round=rounds,
             nfold=5,
-            metrics='mae',
+            metrics=self.metric.value.lower(),
             early_stopping_rounds=5,
             seed=0,
             as_pandas=True)
 
-        # Extract the mean of the MAE from cross-validation results
-        mae_cv = cv_results[
-            'test-mae-mean'].min()  # optimal point (iteration) where the model achieved its best performance
-        best_round = cv_results[
-            'test-mae-mean'].idxmin()  # if you train the model again, same seed, no early stopping, you can put this index as num_boost_round to get same result
+        # Extract the mean of the accuracy from cross-validation results
+        # optimal point (iteration) where the model achieved its best performance
+        accuracy = cv_results['test-' + self.metric.value.lower() + '-mean'].min()
+        # if you train the model again, same seed, no early stopping, you can put this index as num_boost_round to get same result
+        best_round = cv_results['test-' + self.metric.value.lower() + '-mean'].idxmin()
 
         if log_level > 0:
-            print("#{} Cross-Validation MAE: {}".format(best_round, mae_cv))
+            print("#{} Cross-Validation {}: {}".format(best_round, self.metric.value, accuracy))
 
-        return mae_cv, best_round
+        return accuracy, best_round

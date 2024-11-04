@@ -1,5 +1,7 @@
 import pandas as pd
 import time
+
+from src.enums.accuracy_metric import AccuracyMetric
 from src.pipelines.housing_prices_competition_dt_pipeline import HousingPricesCompetitionDTPipeline
 from src.trainers.simple_trainer import SimpleTrainer
 from src.trainers.fast_cross_trainer import FastCrossTrainer
@@ -24,7 +26,7 @@ X, y = load_data()
 
 pipeline = HousingPricesCompetitionDTPipeline(X, True)
 
-trainer = CachedAccurateCrossTrainer(pipeline, X, y)
+trainer = CachedAccurateCrossTrainer(pipeline, X, y, metric=AccuracyMetric.RMSE)
 
 optimizer = CustomGridOptimizer(trainer)
 

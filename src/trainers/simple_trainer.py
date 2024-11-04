@@ -1,16 +1,16 @@
 import pandas as pd
 from pandas import DataFrame, Series
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error
 
+from src.enums.accuracy_metric import AccuracyMetric
 from src.pipelines.dt_pipeline import DTPipeline
 from src.trainers.trainer import Trainer
 
 
 class SimpleTrainer(Trainer):
 
-    def __init__(self, pipeline: DTPipeline):
-        super().__init__(pipeline)
+    def __init__(self, pipeline: DTPipeline, metric: AccuracyMetric = AccuracyMetric.MAE):
+        super().__init__(pipeline, metric=metric)
 
     def validate_model(self, X: DataFrame, y: Series, log_level=1, rounds=None, **xgb_params) -> (float, int):
         """
@@ -32,10 +32,10 @@ class SimpleTrainer(Trainer):
         # Predict validation y using validation X
         predictions = self.model.predict(processed_val_X)
         # Calculate MAE
-        mae = mean_absolute_error(predictions, val_y)
+        accuracy = self.calculate_accuracy(predictions, val_y)
         # TODO: ouptut confusion matrix with XGBClassifier
         # show_confusion_matrix(val_y, predictions)
         if log_level > 0:
-            print("Validation MAE : {}".format(mae))
+            print("Validation {}: {}".format(self.metric.value, accuracy))
 
-        return mae, self.model.best_iteration
+        return accuracy, self.model.best_iteration

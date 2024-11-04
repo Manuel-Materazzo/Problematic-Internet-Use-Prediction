@@ -1,8 +1,12 @@
+import math
+
 import seaborn as sns
 import matplotlib.pyplot as plt
 from pandas import DataFrame, Series
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, mean_absolute_error, mean_squared_error
 from xgboost import XGBRegressor
+
+from src.enums.accuracy_metric import AccuracyMetric
 from src.pipelines.dt_pipeline import DTPipeline
 from abc import ABC, abstractmethod
 
@@ -19,8 +23,9 @@ def show_confusion_matrix(real_values: Series, predictions):
 
 
 class Trainer(ABC):
-    def __init__(self, pipeline: DTPipeline):
+    def __init__(self, pipeline: DTPipeline, metric: AccuracyMetric = AccuracyMetric.MAE):
         self.pipeline: DTPipeline = pipeline
+        self.metric: AccuracyMetric = metric
         self.model = None
 
     def get_pipeline(self) -> DTPipeline:
@@ -89,3 +94,18 @@ class Trainer(ABC):
     @abstractmethod
     def validate_model(self, X: DataFrame, y: Series, log_level=1, rounds=None, **xgb_params) -> (float, int):
         pass
+
+    def calculate_accuracy(self, predictions: Series, real_values: Series) -> float:
+        """
+        Calculates the accuracy of the provided predictions, using the metric specified when creating the trainer.
+        :param predictions:
+        :param real_values:
+        :return:
+        """
+        match self.metric:
+            case AccuracyMetric.MAE:
+                return mean_absolute_error(real_values, predictions)
+            case AccuracyMetric.MSE:
+                return mean_squared_error(real_values, predictions)
+            case AccuracyMetric.RMSE:
+                return math.sqrt(mean_squared_error(real_values, predictions))
