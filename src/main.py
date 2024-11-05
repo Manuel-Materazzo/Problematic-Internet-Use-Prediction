@@ -2,12 +2,14 @@ import pandas as pd
 import time
 
 from src.enums.accuracy_metric import AccuracyMetric
+from src.pipelines.dt_pipeline import save_data_model
 from src.pipelines.housing_prices_competition_dt_pipeline import HousingPricesCompetitionDTPipeline
 from src.trainers.simple_trainer import SimpleTrainer
 from src.trainers.fast_cross_trainer import FastCrossTrainer
 from src.trainers.accurate_cross_trainer import AccurateCrossTrainer
 from src.trainers.cached_accurate_cross_trainer import CachedAccurateCrossTrainer
 from src.hyperparameter_optimizers.custom_grid_optimizer import CustomGridOptimizer
+from src.trainers.trainer import save_model
 
 
 def load_data():
@@ -23,6 +25,9 @@ def load_data():
 
 
 X, y = load_data()
+
+# save model file for current dataset on target directory
+save_data_model(X)
 
 pipeline = HousingPricesCompetitionDTPipeline(X, True)
 
@@ -41,4 +46,10 @@ _, boost_rounds = trainer.validate_model(X, y, log_level=1, **optimized_params)
 print()
 
 # fit complete_model on all data from the training data
-# complete_model = trainer.train_model(X, y, rounds=boost_rounds, **params)
+complete_model = trainer.train_model(X, y, rounds=boost_rounds, **optimized_params)
+
+# save trained pipeline on target directory
+pipeline.save_pipeline()
+
+# save model on target directory
+save_model(complete_model)

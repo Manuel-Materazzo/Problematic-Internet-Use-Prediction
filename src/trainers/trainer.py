@@ -25,12 +25,12 @@ def show_confusion_matrix(real_values: Series, predictions):
 
 
 def save_model(model: XGBRegressor):
-    with open('model.pkl', 'wb') as file:
+    with open('../target/model.pkl', 'wb') as file:
         pickle.dump(model, file)
 
 
 def load_model() -> XGBRegressor:
-    with open('model.pkl', 'rb') as file:
+    with open('../target/model.pkl', 'rb') as file:
         return pickle.load(file)
 
 

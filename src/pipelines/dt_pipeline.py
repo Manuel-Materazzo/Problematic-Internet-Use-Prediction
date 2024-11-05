@@ -1,4 +1,6 @@
+import pickle
 import pandas as pd
+import json
 from abc import ABC, abstractmethod
 from pandas import DataFrame
 from sklearn.compose import ColumnTransformer
@@ -6,6 +8,23 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 from xgboost import XGBRegressor
 from sklearn import set_config
+
+from src.utils.json_utils import map_dtype
+
+
+def load_pipeline() -> any:
+    with open('../target/pipeline.pkl', 'rb') as file:
+        return pickle.load(file)
+
+
+def save_data_model(X: DataFrame):
+    config = {
+        "fields": {col: map_dtype(dtype) for col, dtype in X.dtypes.items()}
+    }
+
+    # Save config dictionary as JSON file
+    with open('../target/data-model.json', 'w') as f:
+        json.dump(config, f, indent=4)
 
 
 class DTPipeline(ABC):
@@ -39,6 +58,7 @@ class DTPipeline(ABC):
         :param dataframe:
         :return:
         """
+        set_config(transform_output="pandas")
         imputed_dataframe = pd.DataFrame(self.pipeline.transform(dataframe))
         return imputed_dataframe
 
@@ -72,3 +92,7 @@ class DTPipeline(ABC):
         elif isinstance(transformer, OneHotEncoder):
             return transformer
         return None
+
+    def save_pipeline(self):
+        with open('../target/pipeline.pkl', 'wb') as file:
+            pickle.dump(self, file)
