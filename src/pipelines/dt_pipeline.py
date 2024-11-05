@@ -5,11 +5,13 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 from xgboost import XGBRegressor
+from sklearn import set_config
 
 
 class DTPipeline(ABC):
 
     def __init__(self, X: DataFrame, imputation_enabled: bool):
+        set_config(transform_output="pandas")
         # Select categorical columns
         self.categorical_cols = [cname for cname in X.columns if X[cname].dtype == "object"]
         # Select numerical columns

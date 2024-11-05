@@ -68,6 +68,7 @@ class Trainer(ABC):
         # plot it!
         plt.figure(figsize=(12, 8))
         sns.barplot(data=importance_df, x='importance', y='feats')
+        plt.show()
 
     def train_model(self, train_X: DataFrame, train_y: Series, val_X: DataFrame = None, val_y: Series = None,
                     rounds=1000, **xgb_params) -> XGBRegressor:
