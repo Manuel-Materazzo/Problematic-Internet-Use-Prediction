@@ -1,6 +1,7 @@
 import math
 import pickle
 
+import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from pandas import DataFrame, Series
@@ -51,20 +52,22 @@ class Trainer(ABC):
             print("No model has been fitted")
             return
 
-        features = list(X.columns)  # Extract original features
+        # Apply the same trasformations as the training process
+        processed_X = self.pipeline.transform(X)
+
+        # Get columns and importance list
+        features = list(processed_X.columns)
         importances = self.model.feature_importances_
 
-        feature_importances = sorted(zip(importances, features), reverse=False)
+        # sort and merge importances and column names into a dataframe
+        feature_importances = sorted(zip(importances, features), reverse=True)
         sorted_importances, sorted_features = zip(*feature_importances)
+        importance_df = pd.DataFrame({'feats': sorted_features[:50], 'importance': sorted_importances[:50]})
 
-        print(sorted_importances, sorted_features)
-
-        # TODO: show feature names on the plot
-        plt.figure(figsize=(12, 6))
-        plt.title('Relative Feature Importance')
-        plt.barh(range(len(sorted_importances)), sorted_importances, color='b', align='center')
-        plt.yticks(range(len(sorted_features)), sorted_features)
-        plt.show()
+        print(importance_df)
+        # plot it!
+        plt.figure(figsize=(12, 8))
+        sns.barplot(data=importance_df, x='importance', y='feats')
 
     def train_model(self, train_X: DataFrame, train_y: Series, val_X: DataFrame = None, val_y: Series = None,
                     rounds=1000, **xgb_params) -> XGBRegressor:
