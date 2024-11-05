@@ -1,4 +1,5 @@
 import math
+import pickle
 
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -20,6 +21,16 @@ def show_confusion_matrix(real_values: Series, predictions):
     plt.xlabel('Predicted')
     plt.ylabel('Real Data')
     plt.show()
+
+
+def save_model(model: XGBRegressor):
+    with open('model.pkl', 'wb') as file:
+        pickle.dump(model, file)
+
+
+def load_model() -> XGBRegressor:
+    with open('model.pkl', 'rb') as file:
+        return pickle.load(file)
 
 
 class Trainer(ABC):
