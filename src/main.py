@@ -24,9 +24,11 @@ def load_data():
     return X, y
 
 
+print("Loading data...")
 X, y = load_data()
 
 # save model file for current dataset on target directory
+print("Saving data model...")
 save_data_model(X)
 
 pipeline = HousingPricesCompetitionDTPipeline(X, True)
@@ -36,20 +38,25 @@ trainer = CachedAccurateCrossTrainer(pipeline, X, y, metric=AccuracyMetric.RMSE)
 optimizer = CustomGridOptimizer(trainer)
 
 # optimize parameters
+print("Tuning Hyperparameters...")
 start = time.time()
 optimized_params = optimizer.tune(X, y, 0.03)
 end = time.time()
 
 print("Tuning took {} seconds".format(end - start))
 
+print("Training and evaluating model...")
 _, boost_rounds = trainer.validate_model(X, y, log_level=1, **optimized_params)
 print()
 
 # fit complete_model on all data from the training data
+print("Fitting complete model...")
 complete_model = trainer.train_model(X, y, rounds=boost_rounds, **optimized_params)
 
 # save trained pipeline on target directory
+print("Saving pipeline...")
 pipeline.save_pipeline()
 
 # save model on target directory
+print("Saving fitted model...")
 save_model(complete_model)
