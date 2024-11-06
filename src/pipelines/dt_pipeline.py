@@ -1,3 +1,4 @@
+import os
 import pickle
 import pandas as pd
 import json
@@ -22,8 +23,10 @@ def save_data_model(X: DataFrame):
         "fields": {col: map_dtype(dtype) for col, dtype in X.dtypes.items()}
     }
 
+    os.makedirs('../target', exist_ok=True)
+
     # Save config dictionary as JSON file
-    with open('../target/data-model.json', 'w') as f:
+    with open('../target/data-model.json', 'w+') as f:
         json.dump(config, f, indent=4)
 
 
@@ -94,5 +97,7 @@ class DTPipeline(ABC):
         return None
 
     def save_pipeline(self):
+        os.makedirs('../target', exist_ok=True)
+
         with open('../target/pipeline.pkl', 'wb') as file:
             pickle.dump(self, file)

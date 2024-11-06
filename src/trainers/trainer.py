@@ -1,4 +1,5 @@
 import math
+import os
 import pickle
 
 import pandas as pd
@@ -25,6 +26,8 @@ def show_confusion_matrix(real_values: Series, predictions):
 
 
 def save_model(model: XGBRegressor):
+    os.makedirs('../target', exist_ok=True)
+
     with open('../target/model.pkl', 'wb') as file:
         pickle.dump(model, file)
 
