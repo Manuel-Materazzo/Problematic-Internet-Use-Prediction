@@ -20,5 +20,5 @@ jobs:
 
       - name: 'Build Image'
         run: |
-          docker build . --tag ghcr.io/Manuel-Materazzo/store:latest
-          docker push ghcr.io/Manuel-Materazzo/store:latest
+          docker build . --tag ghcr.io/manuel-materazzo/store:latest
+          docker push ghcr.io/manuel-materazzo/store:latest
