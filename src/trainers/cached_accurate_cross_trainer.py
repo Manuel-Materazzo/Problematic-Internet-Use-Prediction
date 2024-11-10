@@ -73,12 +73,17 @@ class CachedAccurateCrossTrainer(Trainer):
         cv_scores = []
         best_rounds = []
 
+        self.evals = []
+
         # Loop through each fold
         for split in self.splits:
             best_iteration, mae = self.__cross_train(split, rounds=rounds, **xgb_params)
 
             best_rounds.append(best_iteration)
             cv_scores.append(mae)
+
+        # extract evals
+        self.evals = self.trainer.evals
 
         # Calculate the mean accuracy from cross-validation
         mean_accuracy = np.mean(cv_scores)

@@ -41,6 +41,19 @@ class FastCrossTrainer(Trainer):
             seed=0,
             as_pandas=True)
 
+        self.evals = []
+
+        # for each split
+        for i in range(5):
+            # extract Series of accuracy for the split
+            split_accuracy = cv_results[f'test-{self.metric.value.lower()}-mean'] + cv_results[f'test-{self.metric.value.lower()}-std']*i
+            # format dictionary to be standard compliant
+            self.evals.append({
+                'validation_0': {
+                    self.metric.value.lower(): split_accuracy
+                }
+            })
+
         # Extract the mean of the accuracy from cross-validation results
         # optimal point (iteration) where the model achieved its best performance
         accuracy = cv_results['test-' + self.metric.value.lower() + '-mean'].min()

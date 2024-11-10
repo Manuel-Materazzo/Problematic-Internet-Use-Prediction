@@ -26,6 +26,7 @@ class SimpleTrainer(Trainer):
         # Split into validation and training data
         train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=1)
         # Get trained model
+        self.evals = []
         self.model = self.train_model(train_X, train_y, val_X, val_y, **xgb_params)
         # preprocess validation data
         processed_val_X = pd.DataFrame(self.pipeline.transform(val_X))

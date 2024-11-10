@@ -42,6 +42,7 @@ class Trainer(ABC):
         self.pipeline: DTPipeline = pipeline
         self.metric: AccuracyMetric = metric
         self.model = None
+        self.evals: [] = []
 
     def get_pipeline(self) -> DTPipeline:
         """
@@ -73,6 +74,28 @@ class Trainer(ABC):
         sns.barplot(data=importance_df, x='importance', y='feats')
         plt.show()
 
+    def show_loss(self):
+        if len(self.evals) == 0:
+            print("No model has been fitted with an evaluation set")
+            return
+
+        plt.figure(figsize=(12, 6))
+        plt.xlabel('Boosting Round')
+        plt.ylabel(self.metric.value)
+        plt.title('Loss Over Boosting Rounds')
+
+        i = 0
+
+        # add a line to the plot for each training done
+        for eval_round in self.evals:
+            epochs = len(eval_round['validation_0'][self.metric.value.lower()])
+            x_axis = range(0, epochs)
+            plt.plot(x_axis, eval_round['validation_0'][self.metric.value.lower()], label='Split-{}'.format(i))
+            i = i + 1
+
+        plt.legend()
+        plt.show()
+
     def train_model(self, train_X: DataFrame, train_y: Series, val_X: DataFrame = None, val_y: Series = None,
                     rounds=1000, **xgb_params) -> XGBRegressor:
         """
@@ -98,6 +121,7 @@ class Trainer(ABC):
                 **xgb_params
             )
             model.fit(processed_train_X, train_y, eval_set=[(processed_val_X, val_y)], verbose=False)
+            self.evals.append(model.evals_result())
         # else train with all the data
         else:
             model = XGBRegressor(

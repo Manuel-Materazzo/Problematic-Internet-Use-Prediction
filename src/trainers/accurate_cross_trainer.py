@@ -76,6 +76,8 @@ class AccurateCrossTrainer(Trainer):
             random_state=0
         )
 
+        self.evals = []
+
         # Placeholder for cross-validation MAE scores
         cv_scores = []
         best_rounds = []
