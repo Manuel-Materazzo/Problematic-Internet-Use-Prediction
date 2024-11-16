@@ -4,28 +4,29 @@ from scipy.stats import trim_mean
 from sklearn.model_selection import KFold
 
 from src.enums.accuracy_metric import AccuracyMetric
+from src.models.model_wrapper import ModelWrapper
 from src.pipelines.dt_pipeline import DTPipeline
 from src.trainers.trainer import Trainer
 
 
 class AccurateCrossTrainer(Trainer):
 
-    def __init__(self, pipeline: DTPipeline, metric: AccuracyMetric = AccuracyMetric.MAE):
-        super().__init__(pipeline, metric=metric)
+    def __init__(self, pipeline: DTPipeline, model_wrapper: ModelWrapper, metric: AccuracyMetric = AccuracyMetric.MAE):
+        super().__init__(pipeline, model_wrapper, metric=metric)
 
-    def __cross_train(self, X: DataFrame, y: Series, train_index: int, val_index: int, rounds=None,
-                      **xgb_params) -> (int, int):
+    def __cross_train(self, X: DataFrame, y: Series, train_index: int, val_index: int, iterations=None,
+                      params=None) -> (int, int):
         """
-        Trains a XGBoost regressor on the provided training data by splitting it into training and validation sets.
+        Trains a Model on the provided training data by splitting it into training and validation sets.
         The split function does not shuffle, and it's based on the provided indexes.
         If no rounds are provided, the model is trained using early stopping and will return the optimal number of
-        boosting rounds alongside the MAE.
+        iterations alongside the accuracy.
         :param X:
         :param y:
         :param train_index:
         :param val_index:
-        :param rounds:
-        :param xgb_params:
+        :param iterations:
+        :param params:
         :return:
         """
         # split train and validation data
@@ -33,11 +34,11 @@ class AccurateCrossTrainer(Trainer):
         train_y, val_y = y.iloc[train_index], y.iloc[val_index]
 
         # if no rounds, train with early stopping
-        if rounds is None:
-            self.model = self.train_model(train_X, train_y, val_X, val_y, **xgb_params)
+        if iterations is None:
+            self.model = self.train_model(train_X, train_y, val_X, val_y, params=params)
         # else train normally
         else:
-            self.model = self.train_model(train_X, train_y, rounds=rounds, **xgb_params)
+            self.model = self.train_model(train_X, train_y, iterations=iterations, params=params)
 
         # re-process val_X to obtain MAE
         processed_val_X = self.pipeline.transform(val_X)
@@ -48,12 +49,12 @@ class AccurateCrossTrainer(Trainer):
 
         try:
             # number of boosting rounds used in the best model, MAE
-            return self.model.best_iteration, accuracy
+            return self.model.get_best_iteration(), accuracy
         # if the model was trained without early stopping, return the provided training rounds
         except AttributeError:
-            return rounds, accuracy
+            return iterations, accuracy
 
-    def validate_model(self, X: DataFrame, y: Series, rounds=None, log_level=2, **xgb_params) -> (float, int):
+    def validate_model(self, X: DataFrame, y: Series, iterations=None, log_level=2, params=None) -> (float, int):
         """
         Trains 5 XGBoost regressors on the provided training data by cross-validation.
         Data is splitted into 5 folds, each model is trained on 4 folds and validated on 1 fold.
@@ -64,9 +65,9 @@ class AccurateCrossTrainer(Trainer):
 
         :param X:
         :param y:
-        :param rounds:
+        :param iterations:
         :param log_level:
-        :param xgb_params:
+        :param params:
         :return:
         """
         # Initialize KFold
@@ -84,7 +85,7 @@ class AccurateCrossTrainer(Trainer):
 
         # Loop through each fold
         for train_index, val_index in kf.split(X):
-            best_iteration, mae = self.__cross_train(X, y, train_index, val_index, rounds=rounds, **xgb_params)
+            best_iteration, mae = self.__cross_train(X, y, train_index, val_index, iterations=iterations, params=params)
 
             best_rounds.append(best_iteration)
             cv_scores.append(mae)
@@ -105,8 +106,8 @@ class AccurateCrossTrainer(Trainer):
                 print(best_rounds)
 
         # Cross validate model with the optimal boosting round, to check on MAE discrepancies
-        if rounds is None and log_level > 0:
+        if iterations is None and log_level > 0:
             print("Generating {} with optimal boosting rounds".format(self.metric.value))
-            self.validate_model(X, y, optimal_boost_rounds, log_level=1, **xgb_params)
+            self.validate_model(X, y, optimal_boost_rounds, log_level=1, params=params)
 
         return mean_accuracy, optimal_boost_rounds

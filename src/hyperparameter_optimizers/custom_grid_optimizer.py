@@ -89,7 +89,7 @@ class CustomGridOptimizer(HyperparameterOptimizer):
             full_params = self.params.copy()
             full_params.update(params)
 
-            mae, _ = self.trainer.validate_model(X, y, log_level=0, rounds=optimal_boosting_rounds, **full_params)
+            mae, _ = self.trainer.validate_model(X, y, log_level=0, iterations=optimal_boosting_rounds, params=full_params)
             results.append((params, mae))
 
             if mae < best_score:

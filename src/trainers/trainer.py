@@ -2,21 +2,18 @@ import math
 import os
 import pickle
 
-import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from pandas import DataFrame, Series
 from sklearn.metrics import confusion_matrix, mean_absolute_error, mean_squared_error
-from xgboost import XGBRegressor
 
 from src.enums.accuracy_metric import AccuracyMetric
+from src.models.model_wrapper import ModelWrapper
 from src.pipelines.dt_pipeline import DTPipeline
 from abc import ABC, abstractmethod
 
 
 def show_confusion_matrix(real_values: Series, predictions):
-    print(real_values.values)
-    print(predictions)
     cm = confusion_matrix(real_values, predictions)
     sns.heatmap(cm, annot=True, fmt='', cmap='Blues')
     plt.title('Confusion Matrix')
@@ -25,23 +22,23 @@ def show_confusion_matrix(real_values: Series, predictions):
     plt.show()
 
 
-def save_model(model: XGBRegressor):
+def save_model(model: ModelWrapper):
     os.makedirs('../target', exist_ok=True)
 
     with open('../target/model.pkl', 'wb') as file:
         pickle.dump(model, file)
 
 
-def load_model() -> XGBRegressor:
+def load_model() -> ModelWrapper:
     with open('../target/model.pkl', 'rb') as file:
         return pickle.load(file)
 
 
 class Trainer(ABC):
-    def __init__(self, pipeline: DTPipeline, metric: AccuracyMetric = AccuracyMetric.MAE):
+    def __init__(self, pipeline: DTPipeline, model_wrapper: ModelWrapper, metric: AccuracyMetric = AccuracyMetric.MAE):
         self.pipeline: DTPipeline = pipeline
         self.metric: AccuracyMetric = metric
-        self.model = None
+        self.model_wrapper = model_wrapper
         self.evals: [] = []
 
     def get_pipeline(self) -> DTPipeline:
@@ -52,21 +49,12 @@ class Trainer(ABC):
         return self.pipeline
 
     def show_feature_importance(self, X: DataFrame):
-        if self.model is None:
-            print("No model has been fitted")
-            return
-
         # Apply the same trasformations as the training process
         processed_X = self.pipeline.transform(X)
 
         # Get columns and importance list
         features = list(processed_X.columns)
-        importances = self.model.feature_importances_
-
-        # sort and merge importances and column names into a dataframe
-        feature_importances = sorted(zip(importances, features), reverse=True)
-        sorted_importances, sorted_features = zip(*feature_importances)
-        importance_df = pd.DataFrame({'feats': sorted_features[:50], 'importance': sorted_importances[:50]})
+        importance_df = self.model_wrapper.get_feature_importance(features)
 
         print(importance_df)
         # plot it!
@@ -76,13 +64,13 @@ class Trainer(ABC):
 
     def show_loss(self):
         if len(self.evals) == 0:
-            print("No model has been fitted with an evaluation set")
+            print("ERROR: No model has been fitted with an evaluation set")
             return
 
         plt.figure(figsize=(12, 6))
-        plt.xlabel('Boosting Round')
+        plt.xlabel('Iterations')
         plt.ylabel(self.metric.value)
-        plt.title('Loss Over Boosting Rounds')
+        plt.title('Loss Over Iterations')
 
         i = 0
 
@@ -97,44 +85,34 @@ class Trainer(ABC):
         plt.show()
 
     def train_model(self, train_X: DataFrame, train_y: Series, val_X: DataFrame = None, val_y: Series = None,
-                    rounds=1000, **xgb_params) -> XGBRegressor:
+                    iterations=1000, params=None) -> ModelWrapper:
         """
-        Trains a XGBoost regressor on the provided training data.
+        Trains a Wrapped Model on the provided training data.
         When validation data is provided, the model is trained with early stopping.
+        :param params:
         :param train_X:
         :param train_y:
         :param val_X:
         :param val_y:
-        :param rounds:
-        :param xgb_params:
+        :param iterations:
         :return:
         """
+        params = params or {}
         processed_train_X = self.pipeline.fit_transform(train_X)
 
         # if we have validation sets, train with early stopping rounds
         if val_y is not None:
             processed_val_X = self.pipeline.transform(val_X)
-            model = XGBRegressor(
-                random_state=0,
-                n_estimators=rounds,
-                early_stopping_rounds=5,
-                **xgb_params
-            )
-            model.fit(processed_train_X, train_y, eval_set=[(processed_val_X, val_y)], verbose=False)
-            self.evals.append(model.evals_result())
+            self.model_wrapper.train_until_optimal(processed_train_X, processed_val_X, train_y, val_y, params)
+            self.evals.append(self.model_wrapper.get_loss())
         # else train with all the data
         else:
-            model = XGBRegressor(
-                random_state=0,
-                n_estimators=rounds,
-                **xgb_params
-            )
-            model.fit(processed_train_X, train_y)
+            self.model_wrapper.fit(processed_train_X, train_y, iterations, params)
 
-        return model
+        return self.model_wrapper
 
     @abstractmethod
-    def validate_model(self, X: DataFrame, y: Series, log_level=1, rounds=None, **xgb_params) -> (float, int):
+    def validate_model(self, X: DataFrame, y: Series, log_level=1, iterations=None, params=None) -> (float, int):
         pass
 
     def calculate_accuracy(self, predictions: Series, real_values: Series) -> float:

@@ -5,7 +5,7 @@ from src.hyperparameter_optimizers.hp_optimizer import HyperparameterOptimizer
 from src.trainers.trainer import Trainer
 
 
-class AccurateBayesianOptimizer(HyperparameterOptimizer):
+class HyperoptBayesianOptimizer(HyperparameterOptimizer):
     def __init__(self, trainer: Trainer):
         super().__init__(trainer)
         self.y = None
@@ -52,5 +52,5 @@ class AccurateBayesianOptimizer(HyperparameterOptimizer):
         :return:
         """
         params = self.space_to_params(space)
-        mae, _ = self.trainer.validate_model(self.X, self.y, log_level=0, **params)
+        mae, _ = self.trainer.validate_model(self.X, self.y, log_level=0, params=params)
         return {'loss': mae, 'status': STATUS_OK}

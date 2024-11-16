@@ -2,16 +2,18 @@ import xgboost as xgb
 from pandas import DataFrame, Series
 
 from src.enums.accuracy_metric import AccuracyMetric
+from src.models.model_wrapper import ModelWrapper
+from src.models.xgb_regressor import XGBRegressorWrapper
 from src.pipelines.dt_pipeline import DTPipeline
 from src.trainers.trainer import Trainer
 
 
 class FastCrossTrainer(Trainer):
 
-    def __init__(self, pipeline: DTPipeline, metric: AccuracyMetric = AccuracyMetric.MAE):
-        super().__init__(pipeline, metric=metric)
+    def __init__(self, pipeline: DTPipeline, model_wrapper: ModelWrapper, metric: AccuracyMetric = AccuracyMetric.MAE):
+        super().__init__(pipeline, model_wrapper, metric=metric)
 
-    def validate_model(self, X: DataFrame, y: Series, rounds=1000, log_level=1, **xgb_params) -> (float, int):
+    def validate_model(self, X: DataFrame, y: Series, iterations=1000, log_level=1, params=None) -> (float, int):
         """
         Trains 5 XGBoost regressors on the provided training data by cross-validation.
         This method uses default xgb.cv strategy for cross-validation.
@@ -19,10 +21,13 @@ class FastCrossTrainer(Trainer):
         "Train-Test Contamination Data Leakage" and provide a MAE estimate with lower accuracy.
         :param X:
         :param y:
-        :param rounds:
-        :param xgb_params:
+        :param iterations:
+        :param params:
         :return:
         """
+        if not isinstance(self.model_wrapper, XGBRegressorWrapper):
+            print("ERROR: This trainer only works with XGBoost regressors")
+            return 0, 0
 
         print("WARNING: using simple_cross_validation can cause train data leakage, prefer cross_validation or "
               "classic_validation instead")
@@ -32,9 +37,9 @@ class FastCrossTrainer(Trainer):
         dtrain = xgb.DMatrix(processed_X, label=y)
 
         cv_results = xgb.cv(
-            params=xgb_params,
+            params=params,
             dtrain=dtrain,
-            num_boost_round=rounds,
+            num_boost_round=iterations,
             nfold=5,
             metrics=self.metric.value.lower(),
             early_stopping_rounds=5,
@@ -46,7 +51,8 @@ class FastCrossTrainer(Trainer):
         # for each split
         for i in range(5):
             # extract Series of accuracy for the split
-            split_accuracy = cv_results[f'test-{self.metric.value.lower()}-mean'] + cv_results[f'test-{self.metric.value.lower()}-std']*i
+            split_accuracy = cv_results[f'test-{self.metric.value.lower()}-mean'] + cv_results[
+                f'test-{self.metric.value.lower()}-std'] * i
             # format dictionary to be standard compliant
             self.evals.append({
                 'validation_0': {

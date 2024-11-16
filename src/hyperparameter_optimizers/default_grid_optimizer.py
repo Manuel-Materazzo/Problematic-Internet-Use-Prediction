@@ -1,13 +1,12 @@
 from pandas import DataFrame, Series
 from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
-from xgboost import XGBRegressor
 
 from src.hyperparameter_optimizers.hp_optimizer import HyperparameterOptimizer
 from src.trainers.trainer import Trainer
 
 
-class BalancedGridOptimizer(HyperparameterOptimizer):
+class DefaultGridOptimizer(HyperparameterOptimizer):
     def __init__(self, trainer: Trainer):
         super().__init__(trainer)
 
@@ -17,11 +16,13 @@ class BalancedGridOptimizer(HyperparameterOptimizer):
         :param optimal_boosting_rounds:
         :return:
         """
-        return self.trainer.get_pipeline().get_pipeline_with_training(XGBRegressor(
-            random_state=0,
-            n_estimators=optimal_boosting_rounds,
-            **self.params
-        ))
+        full_params = self.params.copy()
+        full_params.update({
+            'random_state': 0,
+            'n_estimators': optimal_boosting_rounds,
+        })
+        base_model = self.trainer.model_wrapper.get_base_model(params=full_params)
+        return self.trainer.get_pipeline().get_pipeline_with_training(base_model)
 
     def tune(self, X: DataFrame, y: Series, final_lr: float, log_level=0) -> dict:
         """

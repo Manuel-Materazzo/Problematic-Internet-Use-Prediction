@@ -51,5 +51,5 @@ class OptunaOptimizer(HyperparameterOptimizer):
             'n_jobs': -1,
         }
 
-        mae, _ = self.trainer.validate_model(self.X, self.y, log_level=0, **params)
+        mae, _ = self.trainer.validate_model(self.X, self.y, log_level=0, params=params)
         return mae

@@ -7,7 +7,6 @@ from pandas import DataFrame
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
-from xgboost import XGBRegressor
 from sklearn import set_config
 
 from src.utils.json_utils import map_dtype
@@ -65,7 +64,7 @@ class DTPipeline(ABC):
         imputed_dataframe = pd.DataFrame(self.pipeline.transform(dataframe))
         return imputed_dataframe
 
-    def get_pipeline_with_training(self, model: XGBRegressor) -> Pipeline:
+    def get_pipeline_with_training(self, model: any) -> Pipeline:
         """
         Gets the pipeline with the added model training step
         :param model:
