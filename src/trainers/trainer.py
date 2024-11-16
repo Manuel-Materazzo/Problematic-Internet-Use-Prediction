@@ -76,9 +76,9 @@ class Trainer(ABC):
 
         # add a line to the plot for each training done
         for eval_round in self.evals:
-            epochs = len(eval_round['validation_0'][self.metric.value.lower()])
+            epochs = len(eval_round['validation_0']['rmse'])
             x_axis = range(0, epochs)
-            plt.plot(x_axis, eval_round['validation_0'][self.metric.value.lower()], label='Split-{}'.format(i))
+            plt.plot(x_axis, eval_round['validation_0']['rmse'], label='Split-{}'.format(i))
             i = i + 1
 
         plt.legend()

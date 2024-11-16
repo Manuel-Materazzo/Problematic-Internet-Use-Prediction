@@ -56,7 +56,7 @@ class FastCrossTrainer(Trainer):
             # format dictionary to be standard compliant
             self.evals.append({
                 'validation_0': {
-                    self.metric.value.lower(): split_accuracy
+                    'rmse': split_accuracy
                 }
             })
 

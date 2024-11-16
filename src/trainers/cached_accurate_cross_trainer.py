@@ -16,7 +16,8 @@ class CachedAccurateCrossTrainer(Trainer):
     Wrapper of SimpleTrainer that takes X and Y at initialization time and caches kfold splits.
     """
 
-    def __init__(self, pipeline: DTPipeline, model_wrapper: ModelWrapper,  X: DataFrame, y: Series, metric: AccuracyMetric = AccuracyMetric.MAE):
+    def __init__(self, pipeline: DTPipeline, model_wrapper: ModelWrapper, X: DataFrame, y: Series,
+                 metric: AccuracyMetric = AccuracyMetric.MAE):
         super().__init__(pipeline, model_wrapper, metric=metric)
         self.X = X
         self.y = y
@@ -45,14 +46,14 @@ class CachedAccurateCrossTrainer(Trainer):
 
         return splits
 
-    def __cross_train(self, split, rounds=None, params=None) -> (int, int):
+    def __cross_train(self, split, iterations=None, params=None) -> (int, int):
 
         # if no rounds, train with early stopping
-        if rounds is None:
+        if iterations is None:
             self.model = self.trainer.train_model(split[0], split[2], split[1], split[3], params=params)
         # else train normally
         else:
-            self.model = self.trainer.train_model(split[0], split[2], iterations=rounds, params=params)
+            self.model = self.trainer.train_model(split[0], split[2], iterations=iterations, params=params)
 
         # re-process val_X to obtain MAE
         processed_val_X = self.trainer.pipeline.transform(split[1])
@@ -66,9 +67,9 @@ class CachedAccurateCrossTrainer(Trainer):
             return self.model.get_best_iteration(), accuracy
         # if the model was trained without early stopping, return the provided training rounds
         except AttributeError:
-            return rounds, accuracy
+            return iterations, accuracy
 
-    def validate_model(self, X: DataFrame, y: Series, iterations=None, log_level=2, params=None) -> (float, int):
+    def validate_model(self, X: DataFrame, y: Series, log_level=2, iterations=None, params=None) -> (float, int):
 
         # Placeholder for cross-validation MAE scores
         cv_scores = []
@@ -78,7 +79,7 @@ class CachedAccurateCrossTrainer(Trainer):
 
         # Loop through each fold
         for split in self.splits:
-            best_iteration, mae = self.__cross_train(split, rounds=iterations, params=params)
+            best_iteration, mae = self.__cross_train(split, iterations=iterations, params=params)
 
             best_rounds.append(best_iteration)
             cv_scores.append(mae)
@@ -104,6 +105,6 @@ class CachedAccurateCrossTrainer(Trainer):
         # Cross validate model with the optimal boosting round, to check on MAE discrepancies
         if iterations is None and log_level > 0:
             print("Generating {} with optimal boosting rounds".format(self.metric.value))
-            self.validate_model(X, y, optimal_boost_rounds, log_level=1, params=params)
+            self.validate_model(X, y, iterations=optimal_boost_rounds, log_level=1, params=params)
 
         return mean_accuracy, optimal_boost_rounds
