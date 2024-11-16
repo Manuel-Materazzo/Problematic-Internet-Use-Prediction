@@ -10,10 +10,43 @@ class ModelWrapper(ABC):
         self.model = None
 
     @abstractmethod
-    def get_base_model(self, params):
+    def get_base_model(self, params) -> any:
         """
         Trains the model for the given number of iterations.
         :param params:
+        :return:
+        """
+        pass
+
+    @abstractmethod
+    def get_starter_params(self) -> dict:
+        """
+        Gets a dictionary of parameters that are considered a "starting point" for optimization.
+        :return:
+        """
+        pass
+
+    @abstractmethod
+    def get_grid_space(self) -> list[dict]:
+        """
+        Gets the parameter space for gridsearch model optimization.
+        :return:
+        """
+        pass
+
+    @abstractmethod
+    def get_bayesian_space(self) -> dict:
+        """
+        Gets the parameter space for bayesian model optimization.
+        :return:
+        """
+        pass
+
+    @abstractmethod
+    def space_to_params(self, space: dict) -> dict:
+        """
+        Converts a parameter space output back to a param dictionary.
+        :param space:
         :return:
         """
         pass

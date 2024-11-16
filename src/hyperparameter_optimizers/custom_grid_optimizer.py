@@ -3,12 +3,13 @@ import itertools
 from pandas import DataFrame, Series
 
 from src.hyperparameter_optimizers.hp_optimizer import HyperparameterOptimizer
+from src.models.model_wrapper import ModelWrapper
 from src.trainers.trainer import Trainer
 
 
 class CustomGridOptimizer(HyperparameterOptimizer):
-    def __init__(self, trainer: Trainer):
-        super().__init__(trainer)
+    def __init__(self, trainer: Trainer, model_wrapper: ModelWrapper):
+        super().__init__(trainer, model_wrapper)
 
     def tune(self, X: DataFrame, y: Series, final_lr: float) -> dict:
         """
@@ -22,46 +23,23 @@ class CustomGridOptimizer(HyperparameterOptimizer):
         # get optimal boost rounds
         optimal_br = self.get_optimal_boost_rounds(X, y)
 
-        print("Step 1, searching for optimal max_depth and min_child_weight:")
-        self.params.update(
-            self.__do_grid_search(X, y, optimal_br, {
-                'max_depth': range(3, 10),
-                'min_child_weight': range(1, 6)
-            })
-        )
+        index = 1
 
-        print("Step 2, searching for optimal gamma:")
-        self.params.update(
-            self.__do_grid_search(X, y, optimal_br, {
-                'gamma': [i / 10.0 for i in range(0, 5)]
-            })
-        )
+        # get a list of spaces to optimize using sequential steps
+        for step_space in self.model_wrapper.get_grid_space():
 
-        # Recalibrate boosting rounds
-        optimal_br = self.get_optimal_boost_rounds(X, y)
+            # recalibrate iteration if needed
+            if step_space['recalibrate_iterations']:
+                optimal_br = self.get_optimal_boost_rounds(X, y)
+            # avoid to pass useless arguments to the model
+            del step_space['recalibrate_iterations']
 
-        print("Step 3, searching for optimal subsample and colsample_bytree:")
-        self.params.update(
-            self.__do_grid_search(X, y, optimal_br, {
-                'subsample': [i / 100.0 for i in range(60, 100, 5)],
-                'colsample_bytree': [i / 100.0 for i in range(60, 100, 5)]
-            })
-        )
-
-        print("Step 4, searching for optimal reg_alpha:")
-        self.params.update(
-            self.__do_grid_search(X, y, optimal_br, {
-                'reg_alpha': [0, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100]
-            })
-        )
-
-        # No worky, always return 0.1 despite best result lying elsewhere
-        # print("Step 5, searching for optimal learning_rate:")
-        # self.params.update(
-        #     self.__do_grid_search(X, y, optimal_br, {
-        #         'learning_rate': [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1]
-        #     })
-        # )
+            print("Step {}:".format(index))
+            # grid search for best params and update the defaults
+            self.params.update(
+                self.__do_grid_search(X, y, optimal_br, step_space)
+            )
+            index += 1
 
         self.params['learning_rate'] = final_lr
 
@@ -89,7 +67,8 @@ class CustomGridOptimizer(HyperparameterOptimizer):
             full_params = self.params.copy()
             full_params.update(params)
 
-            mae, _ = self.trainer.validate_model(X, y, log_level=0, iterations=optimal_boosting_rounds, params=full_params)
+            mae, _ = self.trainer.validate_model(X, y, log_level=0, iterations=optimal_boosting_rounds,
+                                                 params=full_params)
             results.append((params, mae))
 
             if mae < best_score:

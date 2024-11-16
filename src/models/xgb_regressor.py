@@ -10,10 +10,73 @@ class XGBRegressorWrapper(ModelWrapper):
     def __init__(self):
         super().__init__()
 
-    def get_base_model(self,params):
+    def get_base_model(self, params):
         return XGBRegressor(
             **params
         )
+
+    def get_starter_params(self) -> dict:
+        return {
+            'objective': 'reg:squarederror',
+            'learning_rate': 0.1,
+            'max_depth': 5,
+            'min_child_weight': 1,
+            'gamma': 0,
+            'subsample': 0.8,
+            'colsample_bytree': 0.8,
+            'scale_pos_weight': 1,
+            'n_jobs': -1
+        }
+
+    def get_grid_space(self) -> list[dict]:
+        return [
+            {
+                'recalibrate_iterations': False,
+                'max_depth': range(3, 10),
+                'min_child_weight': range(1, 6)
+            },
+            {
+                'recalibrate_iterations': False,
+                'gamma': [i / 10.0 for i in range(0, 5)]
+            },
+            {
+                'recalibrate_iterations': True,
+                'subsample': [i / 100.0 for i in range(60, 100, 5)],
+                'colsample_bytree': [i / 100.0 for i in range(60, 100, 5)]
+            },
+            {
+                'recalibrate_iterations': False,
+                'reg_alpha': [0, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100]
+            }
+        ]
+
+    def get_bayesian_space(self) -> dict:
+        return {
+            'objective': 'reg:squarederror',
+            'learning_rate': 0.1,
+            'max_depth': 5,
+            'min_child_weight': 1,
+            'gamma': 0,
+            'subsample': 0.8,
+            'colsample_bytree': 0.8,
+            'scale_pos_weight': 1,
+            'n_jobs': -1
+        }
+
+    def space_to_params(self, space: dict) -> dict:
+        return {
+            'objective': 'reg:squarederror',
+            'learning_rate': 0.03,
+            'max_depth': int(space['max_depth']),
+            'min_child_weight': int(space['min_child_weight']),
+            'gamma': space['gamma'],
+            'colsample_bytree': space['colsample_bytree'],
+            'subsample': space['subsample'],
+            'reg_alpha': space['reg_alpha'],
+            'reg_lambda': space['reg_lambda'],
+            'scale_pos_weight': 1,
+            'n_jobs': -1,
+        }
 
     def fit(self, X, y, iterations, params=None):
         params = params.copy() or {}
