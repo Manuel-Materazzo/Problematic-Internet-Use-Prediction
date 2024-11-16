@@ -33,3 +33,18 @@ class HyperparameterOptimizer(ABC):
         """
         _, optimal_boosting_rounds = self.trainer.validate_model(X, y, log_level=0, params=self.params)
         return optimal_boosting_rounds
+
+    def space_to_params(self, space: dict) -> dict:
+
+        # get the space specification
+        bayesian_space = self.model_wrapper.get_bayesian_space()
+
+        for key in space:
+            # get each parameter type
+            param_type = bayesian_space[key].pos_args[0].arg['obj'].name
+
+            # if quniform, hard cast to int
+            if param_type == 'quniform':
+                space[key] = int(space[key])
+
+        return space

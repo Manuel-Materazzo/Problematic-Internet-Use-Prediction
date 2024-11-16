@@ -43,15 +43,6 @@ class ModelWrapper(ABC):
         pass
 
     @abstractmethod
-    def space_to_params(self, space: dict) -> dict:
-        """
-        Converts a parameter space output back to a param dictionary.
-        :param space:
-        :return:
-        """
-        pass
-
-    @abstractmethod
     def train_until_optimal(self, train_X, validation_X, train_y, validation_y, params) -> int:
         """
         Trains the model until the loss function stops improving. Returns the number of iterations.

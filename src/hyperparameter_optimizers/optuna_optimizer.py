@@ -2,14 +2,16 @@ from pandas import DataFrame, Series
 import optuna
 
 from src.hyperparameter_optimizers.hp_optimizer import HyperparameterOptimizer
+from src.models.model_wrapper import ModelWrapper
 from src.trainers.trainer import Trainer
 
 
 class OptunaOptimizer(HyperparameterOptimizer):
-    def __init__(self, trainer: Trainer):
-        super().__init__(trainer)
+    def __init__(self, trainer: Trainer, model_wrapper: ModelWrapper):
+        super().__init__(trainer, model_wrapper)
         self.y = None
         self.X = None
+        self.domain_space = model_wrapper.get_bayesian_space()
 
     def tune(self, X: DataFrame, y: Series, final_lr: float) -> dict:
         """
@@ -37,19 +39,24 @@ class OptunaOptimizer(HyperparameterOptimizer):
         Trains a model with hyperparameters and returns the cross validated MAE.
         :return:
         """
-        params = {
-            'objective': 'reg:squarederror',
-            'learning_rate': 0.03,
-            'max_depth': trial.suggest_int('max_depth', 3, 10),
-            'min_child_weight': trial.suggest_int('min_child_weight', 1, 6),
-            'gamma': trial.suggest_float('gamma', 0, 0.5),
-            'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1),
-            'subsample': trial.suggest_float('subsample', 0.5, 1),
-            'reg_alpha': trial.suggest_float('reg_alpha', 0, 10),
-            'reg_lambda': trial.suggest_float('reg_lambda', 0, 1),
-            'scale_pos_weight': 1,
-            'n_jobs': -1,
-        }
 
-        mae, _ = self.trainer.validate_model(self.X, self.y, log_level=0, params=params)
+        octuna_space = {}
+
+        # convert hyperopt space to optuna by doing a great deal of dark magic
+        for key in self.domain_space:
+            # extract arguments of the hpspace
+            space_accessor = self.domain_space[key].pos_args[0].arg
+            param_name = space_accessor['label'].obj
+            param_type = space_accessor['obj'].name
+            param_low_arg = space_accessor['obj'].arg['low'].obj
+            param_high_arg = space_accessor['obj'].arg['high'].obj
+
+            # instantiate the correct optuna space
+            match param_type:
+                case 'uniform':
+                    octuna_space[param_name] = trial.suggest_float(param_name, param_low_arg, param_high_arg)
+                case 'quniform':
+                    octuna_space[param_name] = trial.suggest_int(param_name, param_low_arg, param_high_arg)
+
+        mae, _ = self.trainer.validate_model(self.X, self.y, log_level=0, params=octuna_space)
         return mae

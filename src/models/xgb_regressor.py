@@ -1,8 +1,10 @@
 import pandas as pd
 from pandas import DataFrame
+from hyperopt import hp
+from xgboost import XGBRegressor
+
 
 from src.models.model_wrapper import ModelWrapper
-from xgboost import XGBRegressor
 
 
 class XGBRegressorWrapper(ModelWrapper):
@@ -52,30 +54,13 @@ class XGBRegressorWrapper(ModelWrapper):
 
     def get_bayesian_space(self) -> dict:
         return {
-            'objective': 'reg:squarederror',
-            'learning_rate': 0.1,
-            'max_depth': 5,
-            'min_child_weight': 1,
-            'gamma': 0,
-            'subsample': 0.8,
-            'colsample_bytree': 0.8,
-            'scale_pos_weight': 1,
-            'n_jobs': -1
-        }
-
-    def space_to_params(self, space: dict) -> dict:
-        return {
-            'objective': 'reg:squarederror',
-            'learning_rate': 0.03,
-            'max_depth': int(space['max_depth']),
-            'min_child_weight': int(space['min_child_weight']),
-            'gamma': space['gamma'],
-            'colsample_bytree': space['colsample_bytree'],
-            'subsample': space['subsample'],
-            'reg_alpha': space['reg_alpha'],
-            'reg_lambda': space['reg_lambda'],
-            'scale_pos_weight': 1,
-            'n_jobs': -1,
+            'max_depth': hp.quniform("max_depth", 3, 10, 1),
+            'min_child_weight': hp.quniform('min_child_weight', 1, 6, 1),
+            'gamma': hp.uniform('gamma', 0, 0.5),
+            'colsample_bytree': hp.uniform('colsample_bytree', 0.5, 1),
+            'subsample': hp.uniform('subsample', 0.5, 1),
+            'reg_alpha': hp.uniform('reg_alpha', 0, 10),
+            'reg_lambda': hp.uniform('reg_lambda', 0, 1),
         }
 
     def fit(self, X, y, iterations, params=None):

@@ -2,23 +2,17 @@ from pandas import DataFrame, Series
 from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
 
 from src.hyperparameter_optimizers.hp_optimizer import HyperparameterOptimizer
+from src.models.model_wrapper import ModelWrapper
 from src.trainers.trainer import Trainer
 
 
 class HyperoptBayesianOptimizer(HyperparameterOptimizer):
-    def __init__(self, trainer: Trainer):
-        super().__init__(trainer)
+    def __init__(self, trainer: Trainer, model_wrapper: ModelWrapper):
+        super().__init__(trainer, model_wrapper)
         self.y = None
         self.X = None
-        self.domain_space = {
-            'max_depth': hp.quniform("max_depth", 3, 10, 1),
-            'min_child_weight': hp.quniform('min_child_weight', 1, 6, 1),
-            'gamma': hp.uniform('gamma', 0, 0.5),
-            'colsample_bytree': hp.uniform('colsample_bytree', 0.5, 1),
-            'subsample': hp.uniform('subsample', 0.5, 1),
-            'reg_alpha': hp.uniform('reg_alpha', 0, 10),
-            'reg_lambda': hp.uniform('reg_lambda', 0, 1),
-        }
+        self.domain_space = model_wrapper.get_bayesian_space()
+        self.model_wrapper = model_wrapper
 
     def tune(self, X: DataFrame, y: Series, final_lr: float) -> dict:
         """
@@ -39,7 +33,9 @@ class HyperoptBayesianOptimizer(HyperparameterOptimizer):
                                 max_evals=100,
                                 trials=trials)
 
-        self.params = self.space_to_params(best_hyperparams)
+        self.params.update(
+            self.space_to_params(best_hyperparams)
+        )
 
         self.params['learning_rate'] = final_lr
 
