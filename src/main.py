@@ -41,7 +41,7 @@ pipeline = HousingPricesCompetitionDTPipeline(X, True)
 # pick a model, a trainer and an optimizer
 model_type = XGBRegressorWrapper()
 trainer = CachedAccurateCrossTrainer(pipeline, model_type, X, y)
-optimizer = DefaultGridOptimizer(trainer)
+optimizer = DefaultGridOptimizer(trainer, model_type)
 
 # optimize parameters
 print("Tuning Hyperparameters...")
