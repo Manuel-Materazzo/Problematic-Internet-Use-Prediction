@@ -12,7 +12,11 @@ class XGBRegressorWrapper(ModelWrapper):
     def __init__(self):
         super().__init__()
 
-    def get_base_model(self, params):
+    def get_base_model(self, iterations, params):
+        params.update({
+            'random_state': 0,
+            'n_estimators': iterations,
+        })
         return XGBRegressor(
             **params
         )

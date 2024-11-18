@@ -10,7 +10,7 @@ class ModelWrapper(ABC):
         self.model = None
 
     @abstractmethod
-    def get_base_model(self, params) -> any:
+    def get_base_model(self, iterations, params) -> any:
         """
         Trains the model for the given number of iterations.
         :param params:

@@ -1,5 +1,6 @@
 import pandas as pd
 from pandas import DataFrame
+from hyperopt import hp
 
 from src.models.model_wrapper import ModelWrapper
 from sklearn.ensemble import HistGradientBoostingRegressor
@@ -12,10 +13,53 @@ class HGBRegressorWrapper(ModelWrapper):
         super().__init__()
         self.importances = None
 
-    def get_base_model(self, params):
+    def get_base_model(self, iterations, params):
+        params.update({
+            'random_state': 0,
+        })
         return HistGradientBoostingRegressor(
             **params
         )
+
+    def get_starter_params(self) -> dict:
+        return {
+            'loss': 'squared_error',
+            'random_state': 0,
+            'learning_rate': 0.1,
+            'max_depth': None,
+            'max_leaf_nodes': 31,
+            'min_samples_leaf': 20,
+            'l2_regularization': 0.0,
+            'max_features': 1.0,
+            'max_bins': 255
+        }
+
+    def get_grid_space(self) -> list[dict]:
+        return [
+            {
+                'recalibrate_iterations': False,
+                'max_depth': range(3, 10),
+                'min_samples_leaf': range(20, 101, 20)
+            },
+            {
+                'recalibrate_iterations': False,
+                'max_bins': [255, 300, 400, 500]
+            },
+            {
+                'recalibrate_iterations': False,
+                'l2_regularization': [0, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1]
+            }
+        ]
+
+    def get_bayesian_space(self) -> dict:
+        return {
+            'max_leaf_nodes': hp.quniform("max_leaf_nodes", 31, 100, 1),
+            'max_depth': hp.quniform("max_depth", 3, 10, 1),
+            'min_samples_leaf': hp.quniform("min_samples_leaf", 20, 100, 1),
+            'l2_regularization': hp.uniform("l2_regularization", 0.0, 1.0),
+            'max_features': hp.uniform("max_features", 0.5, 1.0),
+            'max_bins': hp.quniform("max_bins", 2, 255, 1)
+        }
 
     def fit(self, X, y, iterations, params=None):
         self.train_until_optimal(X, None, y, None, params=params)
