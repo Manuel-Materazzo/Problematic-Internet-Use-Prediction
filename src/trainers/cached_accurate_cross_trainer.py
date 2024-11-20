@@ -81,7 +81,7 @@ class CachedAccurateCrossTrainer(Trainer):
         for split in self.splits:
             best_iteration, mae = self.__cross_train(split, iterations=iterations, params=params)
 
-            best_rounds.append(best_iteration)
+            best_rounds.append(best_iteration or 0)
             cv_scores.append(mae)
 
         # extract evals

@@ -87,7 +87,7 @@ class AccurateCrossTrainer(Trainer):
         for train_index, val_index in kf.split(X):
             best_iteration, mae = self.__cross_train(X, y, train_index, val_index, iterations=iterations, params=params)
 
-            best_rounds.append(best_iteration)
+            best_rounds.append(best_iteration or 0)
             cv_scores.append(mae)
 
         # Calculate the mean accuracy from cross-validation
