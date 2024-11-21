@@ -1,2 +1,4 @@
 /resources/brist1d/
 /target/
+/src/catboost_info/
+/src/submission.csv

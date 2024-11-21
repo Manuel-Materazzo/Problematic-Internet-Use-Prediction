@@ -48,6 +48,9 @@ class Trainer(ABC):
         """
         return self.pipeline
 
+    def get_model_name(self) -> str:
+        return type(self.model_wrapper).__name__
+
     def show_feature_importance(self, X: DataFrame):
         # Apply the same trasformations as the training process
         processed_X = self.pipeline.transform(X)

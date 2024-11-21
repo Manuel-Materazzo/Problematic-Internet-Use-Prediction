@@ -25,7 +25,7 @@ class SimpleTrainer(Trainer):
         :return:
         """
         # Split into validation and training data
-        train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=1)
+        train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=0)
         # Get trained model
         self.evals = []
         self.model_wrapper = self.train_model(train_X, train_y, val_X, val_y, params=params)
