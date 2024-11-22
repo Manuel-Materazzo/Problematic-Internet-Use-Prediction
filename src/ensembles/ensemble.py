@@ -1,5 +1,6 @@
 import optuna
 import numpy as np
+import matplotlib.pyplot as plt
 from typing import TypedDict
 from functools import partial
 from pandas import DataFrame, Series
@@ -21,8 +22,15 @@ class Ensemble:
         self.optimizer = optimizer
         self.accuracy_metric = None
         self.leaderboard = None
-        self.weights: list = []
+        self.weights = None
         self.models: list[ModelWrapper] = []
+
+    def show_weights(self):
+        # Pie chart
+        weights = self.weights[self.weights >= 0.005]  # hide small weights in pie chart
+        plt.pie(weights, labels=weights.index, autopct="%.0f%%")
+        plt.title('Ensemble weights')
+        plt.show()
 
     def show_leaderboard(self, X: DataFrame, y: Series) -> float:
         """
@@ -71,23 +79,26 @@ class Ensemble:
         print(self.leaderboard)
         return np.mean(self.leaderboard['accuracy'])
 
-    def optimize_weights(self, X: DataFrame, y: Series) -> list:
+    def optimize_weights(self, X: DataFrame, y: Series) -> Series:
         """
         Trains each model of the ensemble on half of the provided data, and calculates the optimal ensemble weights.
         :param X:
         :param y:
         :return:
         """
-        if len(self.weights) == 0:
+        if self.weights is None:
             # Split into validation and training data
             train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=0)
 
             predictions_array = []
+            model_names = []
 
             # train each model in the ensemble
             for member in self.members:
                 trainer = member['trainer']
                 params = member['params']
+
+                model_names.append(trainer.get_model_name())
 
                 # train the model using early stopping (validation data is not used during training)
                 model = trainer.train_model(train_X, train_y, val_X, val_y, params=params)
@@ -97,7 +108,8 @@ class Ensemble:
                 predictions_array.append(model.predict(processed_val_X))
 
             # optimize weights to maximize prediction accuracy
-            self.weights = self._optuna_weight_study(val_y, predictions_array)
+            raw_weights = self._optuna_weight_study(val_y, predictions_array)
+            self.weights: Series = Series(raw_weights, index=model_names)
         return self.weights
 
     def _optuna_weight_study(self, real_values: Series, predictions_array: list) -> list:
