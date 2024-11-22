@@ -1,7 +1,8 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
+from src.models.model_inference_wrapper import ModelInferenceWrapper
 
 
-class ModelWrapper(ABC):
+class ModelWrapper(ModelInferenceWrapper):
     """
     Interface for wrapping a Model in order to standardize methods and properties names
     """
@@ -13,6 +14,7 @@ class ModelWrapper(ABC):
     def get_base_model(self, iterations, params) -> any:
         """
         Trains the model for the given number of iterations.
+        :param iterations:
         :param params:
         :return:
         """

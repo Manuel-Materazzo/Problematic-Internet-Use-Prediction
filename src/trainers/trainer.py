@@ -8,6 +8,7 @@ from pandas import DataFrame, Series
 from sklearn.metrics import confusion_matrix, mean_absolute_error, mean_squared_error
 
 from src.enums.accuracy_metric import AccuracyMetric
+from src.models.model_inference_wrapper import ModelInferenceWrapper
 from src.models.model_wrapper import ModelWrapper
 from src.pipelines.dt_pipeline import DTPipeline
 from abc import ABC, abstractmethod
@@ -22,14 +23,14 @@ def show_confusion_matrix(real_values: Series, predictions):
     plt.show()
 
 
-def save_model(model: ModelWrapper):
+def save_model(model: ModelInferenceWrapper):
     os.makedirs('../target', exist_ok=True)
 
     with open('../target/model.pkl', 'wb') as file:
         pickle.dump(model, file)
 
 
-def load_model() -> ModelWrapper:
+def load_model() -> ModelInferenceWrapper:
     with open('../target/model.pkl', 'rb') as file:
         return pickle.load(file)
 

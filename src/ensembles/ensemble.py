@@ -8,18 +8,19 @@ from sklearn.model_selection import train_test_split
 
 from src.enums.accuracy_metric import AccuracyMetric
 from src.hyperparameter_optimizers.hp_optimizer import HyperparameterOptimizer
+from src.models.model_inference_wrapper import ModelInferenceWrapper
 from src.models.model_wrapper import ModelWrapper
 from src.trainers.trainer import Trainer
 
-EnsembleMember = TypedDict('EnsembleMember', {'trainer': Trainer, 'params': dict})
+EnsembleMember = TypedDict('EnsembleMember',
+                           {'trainer': Trainer, 'params': dict | None, 'optimizer': HyperparameterOptimizer | None})
 LeaderboardEntry = TypedDict('LeaderboardEntry', {'model_name': str, 'accuracy': float, 'iterations': int})
 
 
-class Ensemble:
+class Ensemble(ModelInferenceWrapper):
 
-    def __init__(self, members: list[EnsembleMember], optimizer: HyperparameterOptimizer = None):
+    def __init__(self, members: list[EnsembleMember]):
         self.members = members
-        self.optimizer = optimizer
         self.accuracy_metric = None
         self.leaderboard = None
         self.weights = None
@@ -48,6 +49,7 @@ class Ensemble:
                 # get the trainer and the params
                 trainer = member['trainer']
                 params = member['params']
+                optimizer = member['optimizer']
 
                 # check accuracy metric consistency
                 if self.accuracy_metric is None:
@@ -58,9 +60,9 @@ class Ensemble:
                 print("Training {}...".format(trainer.get_model_name()))
 
                 # if we have an optimizer set and no params are provided, calculate optimal params
-                if self.optimizer is not None and params is None:
+                if optimizer is not None and params is None:
                     print("No hyperparams provided, auto-optimizing...")
-                    params = self.optimizer.tune(X, y, 0.03)
+                    params = optimizer.tune(X, y, 0.03)
                     # save optimized params for later (full training)
                     member['params'] = params
                     print("Optimal hyperparams: {}".format(params))
@@ -97,6 +99,15 @@ class Ensemble:
             for member in self.members:
                 trainer = member['trainer']
                 params = member['params']
+                optimizer = member['optimizer']
+
+                # if we have an optimizer set and no params are provided, calculate optimal params
+                if optimizer is not None and params is None:
+                    print("No hyperparams provided, auto-optimizing...")
+                    params = optimizer.tune(X, y, 0.03)
+                    # save optimized params for later (full training)
+                    member['params'] = params
+                    print("Optimal hyperparams: {}".format(params))
 
                 model_names.append(trainer.get_model_name())
 
