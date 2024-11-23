@@ -50,10 +50,10 @@ class CachedAccurateCrossTrainer(Trainer):
 
         # if no rounds, train with early stopping
         if iterations is None:
-            self.model = self.trainer.train_model(split[0], split[2], split[1], split[3], params=params)
+            self.trainer.train_model(split[0], split[2], split[1], split[3], params=params)
         # else train normally
         else:
-            self.model = self.trainer.train_model(split[0], split[2], iterations=iterations, params=params)
+            self.trainer.train_model(split[0], split[2], iterations=iterations, params=params)
 
         # re-process val_X to obtain accuracy
         processed_val_X = self.trainer.pipeline.transform(split[1])
@@ -64,7 +64,7 @@ class CachedAccurateCrossTrainer(Trainer):
 
         try:
             # number of boosting rounds used in the best model, accuracy
-            return self.model.get_best_iteration(), accuracy
+            return self.model_wrapper.get_best_iteration(), accuracy
         # if the model was trained without early stopping, return the provided training rounds
         except AttributeError:
             return iterations, accuracy

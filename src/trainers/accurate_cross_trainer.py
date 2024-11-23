@@ -35,10 +35,10 @@ class AccurateCrossTrainer(Trainer):
 
         # if no rounds, train with early stopping
         if iterations is None:
-            self.model = self.train_model(train_X, train_y, val_X, val_y, params=params)
+            self.train_model(train_X, train_y, val_X, val_y, params=params)
         # else train normally
         else:
-            self.model = self.train_model(train_X, train_y, iterations=iterations, params=params)
+            self.train_model(train_X, train_y, iterations=iterations, params=params)
 
         # re-process val_X to obtain accuracy
         processed_val_X = self.pipeline.transform(val_X)
@@ -48,8 +48,8 @@ class AccurateCrossTrainer(Trainer):
         accuracy = self.calculate_accuracy(predictions, val_y)
 
         try:
-            # number of boosting rounds used in the best model, MAE
-            return self.model.get_best_iteration(), accuracy
+            # number of boosting rounds used in the best model, accuracy
+            return self.model_wrapper.get_best_iteration(), accuracy
         # if the model was trained without early stopping, return the provided training rounds
         except AttributeError:
             return iterations, accuracy
