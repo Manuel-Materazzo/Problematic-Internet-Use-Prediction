@@ -96,7 +96,7 @@ class XGBClassifierWrapper(ModelWrapper):
         return self.model.predict(X)
 
     def predict_proba(self, X) -> any:
-        return self.model.predict_proba(X)
+        return self.model.predict_proba(X)[:, 1]
 
     def get_best_iteration(self) -> int:
         return self.model.best_iteration

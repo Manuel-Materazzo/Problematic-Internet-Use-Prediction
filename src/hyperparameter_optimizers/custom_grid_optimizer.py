@@ -62,8 +62,15 @@ class CustomGridOptimizer(HyperparameterOptimizer):
         param_combinations = [dict(zip(param_grid, v)) for v in itertools.product(*param_grid.values())]
 
         best_params = None
-        best_score = float('inf')
         results = []
+
+        if direction == OptimizationDirection.MINIMIZE:
+            best_score = float('inf')
+        elif direction == OptimizationDirection.MAXIMIZE:
+            best_score = 0
+        else:
+            print("ERROR: optimization direction not valid")
+            return {}
 
         for params in param_combinations:
 
@@ -81,7 +88,7 @@ class CustomGridOptimizer(HyperparameterOptimizer):
 
         if log_level > 0:
             print("Best parameters found: ", best_params)
-            print("Best MAE: {}".format(best_score))
+            print("Best acciracy: {}".format(best_score))
 
         if log_level > 1:
             # Print all results
