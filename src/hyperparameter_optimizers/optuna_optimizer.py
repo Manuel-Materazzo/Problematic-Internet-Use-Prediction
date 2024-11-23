@@ -1,6 +1,7 @@
-from pandas import DataFrame, Series
 import optuna
-
+import platform
+import optuna_distributed
+from pandas import DataFrame, Series
 from src.hyperparameter_optimizers.hp_optimizer import HyperparameterOptimizer
 from src.models.model_wrapper import ModelWrapper
 from src.trainers.trainer import Trainer
@@ -26,7 +27,10 @@ class OptunaOptimizer(HyperparameterOptimizer):
         self.y = y
 
         study = optuna.create_study(direction='minimize')
-        study.optimize(self.__objective, n_trials=100)
+        # leverage distributed training on linux
+        if platform.system() != 'Windows':
+            study = optuna_distributed.from_study(study)
+        study.optimize(self.__objective, n_trials=100, n_jobs=-1)
         self.params.update(study.best_params)
 
         self.params['learning_rate'] = final_lr

@@ -29,6 +29,7 @@ class CatBoostWrapper(ModelWrapper):
             'learning_rate': 0.1,
             'depth': 6,
             'l2_leaf_reg': 3.0,
+            'thread_count': -1
         }
 
     def get_grid_space(self) -> list[dict]:

@@ -1,4 +1,6 @@
 import optuna
+import platform
+import optuna_distributed
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import TypedDict
@@ -136,9 +138,12 @@ class Ensemble(ModelInferenceWrapper):
         sampler = optuna.samplers.CmaEsSampler(seed=0)
         pruner = optuna.pruners.HyperbandPruner()
         study = optuna.create_study(sampler=sampler, pruner=pruner, study_name="OptWeights", direction='minimize')
+        # leverage distributed training on linux
+        if platform.system() != 'Windows':
+            study = optuna_distributed.from_study(study)
         # define an objective and start the study
         objective_partial = partial(self._objective, real_values=real_values, predictions_array=predictions_array)
-        study.optimize(objective_partial, n_trials=4000)
+        study.optimize(objective_partial, n_trials=4000, n_jobs=-1)
         # get weights
         return [study.best_params[f"weight{n}"] for n in range(len(predictions_array))]
 
