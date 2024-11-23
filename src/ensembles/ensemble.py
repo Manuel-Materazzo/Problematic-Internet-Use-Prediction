@@ -173,6 +173,10 @@ class Ensemble(ModelInferenceWrapper):
         :return:
         """
 
+        if self.leaderboard is None:
+            print("No optimal iterations provided, use show_leaderboard() first")
+            return
+
         # train each model in the ensemble
         for member in self.members:
             # get the trainer and the params
@@ -192,6 +196,10 @@ class Ensemble(ModelInferenceWrapper):
 
         if len(self.weights) == 0:
             print("No weights provided, use optimize_weights() first")
+            return Series([])
+
+        if len(self.models) == 0:
+            print("No models trained, use train() first")
             return Series([])
 
         predictions_array = []
