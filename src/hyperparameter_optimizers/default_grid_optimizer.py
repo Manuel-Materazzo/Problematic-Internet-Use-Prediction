@@ -2,14 +2,17 @@ from pandas import DataFrame, Series
 from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
 
+from src.enums.accuracy_metric import AccuracyMetric
+from src.enums.optimization_direction import OptimizationDirection
 from src.hyperparameter_optimizers.hp_optimizer import HyperparameterOptimizer
 from src.models.model_wrapper import ModelWrapper
 from src.trainers.trainer import Trainer
 
 
 class DefaultGridOptimizer(HyperparameterOptimizer):
-    def __init__(self, trainer: Trainer, model_wrapper: ModelWrapper):
-        super().__init__(trainer, model_wrapper)
+    def __init__(self, trainer: Trainer, model_wrapper: ModelWrapper,
+                 direction: OptimizationDirection = OptimizationDirection.MINIMIZE):
+        super().__init__(trainer, model_wrapper, direction=direction)
 
     def __get_full_pipeline(self, optimal_boosting_rounds: int) -> Pipeline:
         """
@@ -71,19 +74,32 @@ class DefaultGridOptimizer(HyperparameterOptimizer):
         :param param_grid:
         :return:
         """
-        grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring='neg_mean_absolute_error', verbose=1, n_jobs=-1)
+
+        match self.trainer.metric:
+            case AccuracyMetric.MAE:
+                scoring = 'neg_mean_absolute_error'
+            case AccuracyMetric.MSE:
+                scoring = 'neg_mean_squared_error'
+            case AccuracyMetric.RMSE:
+                scoring = 'neg_root_mean_squared_error'
+            case AccuracyMetric.AUC:
+                scoring = 'roc_auc'
+            case _:
+                scoring = self.trainer.metric.value.lower()
+
+        grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring=scoring, verbose=1, n_jobs=-1)
         grid_search.fit(X, y)
 
         if log_level > 0:
             print("Best parameters found: ", grid_search.best_params_)
-            print("Best MAE: ", -grid_search.best_score_)
+            print("Best accuracy: ", -grid_search.best_score_)
 
         if log_level > 1:
             # Print all parameters and corresponding MAE
             results = grid_search.cv_results_
             for i in range(len(results['params'])):
                 print(f"Parameters: {results['params'][i]}")
-                print(f"Mean Absolute Error (MAE): {abs(results['mean_test_score'][i])}")
+                print(f"Accuracy: {abs(results['mean_test_score'][i])}")
                 print()
 
         return grid_search.best_params_

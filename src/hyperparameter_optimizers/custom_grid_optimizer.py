@@ -9,15 +9,14 @@ from src.trainers.trainer import Trainer
 
 
 class CustomGridOptimizer(HyperparameterOptimizer):
-    def __init__(self, trainer: Trainer, model_wrapper: ModelWrapper):
-        super().__init__(trainer, model_wrapper)
+    def __init__(self, trainer: Trainer, model_wrapper: ModelWrapper,
+                 direction: OptimizationDirection = OptimizationDirection.MINIMIZE):
+        super().__init__(trainer, model_wrapper, direction=direction)
 
-    def tune(self, X: DataFrame, y: Series, final_lr: float,
-             direction: OptimizationDirection = OptimizationDirection.MINIMIZE) -> dict:
+    def tune(self, X: DataFrame, y: Series, final_lr: float) -> dict:
         """
         Calculates the best hyperparameters for the dataset by performing a grid search
         Trains a cross-validated model for each combination of hyperparameters, and picks the best based on MAE
-        :param direction:
         :param X:
         :param y:
         :param final_lr:
@@ -40,7 +39,7 @@ class CustomGridOptimizer(HyperparameterOptimizer):
             print("Step {}:".format(index))
             # grid search for best params and update the defaults
             self.params.update(
-                self.__do_grid_search(X, y, optimal_br, step_space, direction)
+                self.__do_grid_search(X, y, optimal_br, step_space)
             )
             index += 1
 
@@ -49,7 +48,7 @@ class CustomGridOptimizer(HyperparameterOptimizer):
         return self.params
 
     def __do_grid_search(self, X: DataFrame, y: Series, optimal_boosting_rounds: int, param_grid: dict,
-                         direction: OptimizationDirection, log_level=1) -> dict:
+                         log_level=1) -> dict:
         """
         Trains cross-validated model for each combination of the provided hyperparameters, and picks the best based on MAE
         :param pipeline:
@@ -64,9 +63,9 @@ class CustomGridOptimizer(HyperparameterOptimizer):
         best_params = None
         results = []
 
-        if direction == OptimizationDirection.MINIMIZE:
+        if self.direction == OptimizationDirection.MINIMIZE:
             best_score = float('inf')
-        elif direction == OptimizationDirection.MAXIMIZE:
+        elif self.direction == OptimizationDirection.MAXIMIZE:
             best_score = 0
         else:
             print("ERROR: optimization direction not valid")
@@ -81,8 +80,8 @@ class CustomGridOptimizer(HyperparameterOptimizer):
                                                       params=full_params)
             results.append((params, accuracy))
 
-            if (direction == OptimizationDirection.MINIMIZE and (accuracy < best_score)) or \
-                    (direction == OptimizationDirection.MAXIMIZE and (accuracy > best_score)):
+            if (self.direction == OptimizationDirection.MINIMIZE and (accuracy < best_score)) or \
+                    (self.direction == OptimizationDirection.MAXIMIZE and (accuracy > best_score)):
                 best_score = accuracy
                 best_params = params
 

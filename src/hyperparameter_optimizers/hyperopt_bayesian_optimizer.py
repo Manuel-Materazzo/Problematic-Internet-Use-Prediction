@@ -8,20 +8,19 @@ from src.trainers.trainer import Trainer
 
 
 class HyperoptBayesianOptimizer(HyperparameterOptimizer):
-    def __init__(self, trainer: Trainer, model_wrapper: ModelWrapper):
-        super().__init__(trainer, model_wrapper)
+    def __init__(self, trainer: Trainer, model_wrapper: ModelWrapper,
+                 direction: OptimizationDirection = OptimizationDirection.MINIMIZE):
+        super().__init__(trainer, model_wrapper, direction=direction)
         self.y = None
         self.X = None
         self.direction = OptimizationDirection.MINIMIZE
         self.domain_space = model_wrapper.get_bayesian_space()
         self.model_wrapper = model_wrapper
 
-    def tune(self, X: DataFrame, y: Series, final_lr: float,
-             direction: OptimizationDirection = OptimizationDirection.MINIMIZE) -> dict:
+    def tune(self, X: DataFrame, y: Series, final_lr: float) -> dict:
         """
         Calculates the best hyperparameters for the dataset by performing a bayesian optimization
         Trains cross-validated model for each combination of hyperparameters, and picks the best based on MAE.
-        :param direction:
         :param X:
         :param y:
         :param final_lr:
@@ -29,7 +28,6 @@ class HyperoptBayesianOptimizer(HyperparameterOptimizer):
         """
         self.X = X
         self.y = y
-        self.direction = direction
 
         trials = Trials()
 
