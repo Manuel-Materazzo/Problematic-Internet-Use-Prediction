@@ -74,6 +74,11 @@ class ModelWrapper(ModelInferenceWrapper):
         pass
 
     @abstractmethod
+    def predict_proba(self, X):
+        pass
+
+
+    @abstractmethod
     def get_best_iteration(self) -> int:
         pass
 

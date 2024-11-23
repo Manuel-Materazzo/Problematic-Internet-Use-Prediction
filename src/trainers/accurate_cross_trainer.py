@@ -40,11 +40,11 @@ class AccurateCrossTrainer(Trainer):
         else:
             self.model = self.train_model(train_X, train_y, iterations=iterations, params=params)
 
-        # re-process val_X to obtain MAE
+        # re-process val_X to obtain accuracy
         processed_val_X = self.pipeline.transform(val_X)
 
-        # Predict and calculate MAE
-        predictions = self.model.predict(processed_val_X)
+        # Predict and calculate accuracy
+        predictions = self.get_predictions(processed_val_X)
         accuracy = self.calculate_accuracy(predictions, val_y)
 
         try:

@@ -14,7 +14,11 @@ class OptunaOptimizer(HyperparameterOptimizer):
         super().__init__(trainer, model_wrapper)
         self.y = None
         self.X = None
+        self.study = None
         self.domain_space = model_wrapper.get_bayesian_space()
+
+    def show_param_importance(self):
+        optuna.visualization.plot_param_importances(self.study)
 
     def tune(self, X: DataFrame, y: Series, final_lr: float,
              direction: OptimizationDirection = OptimizationDirection.MINIMIZE) -> dict:
@@ -30,12 +34,12 @@ class OptunaOptimizer(HyperparameterOptimizer):
         self.X = X
         self.y = y
 
-        study = optuna.create_study(direction=direction.value.lower())
+        self.study = optuna.create_study(direction=direction.value.lower())
         # leverage distributed training on linux
         if platform.system() != 'Windows':
-            study = optuna_distributed.from_study(study)
-        study.optimize(self.__objective, n_trials=100, n_jobs=-1)
-        self.params.update(study.best_params)
+            self.study = optuna_distributed.from_study(self.study)
+        self.study.optimize(self.__objective, n_trials=100, n_jobs=-1)
+        self.params.update(self.study.best_params)
 
         self.params['learning_rate'] = final_lr
 

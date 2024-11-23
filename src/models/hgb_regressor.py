@@ -85,6 +85,9 @@ class HGBRegressorWrapper(ModelWrapper):
     def predict(self, X) -> any:
         return self.model.predict(X)
 
+    def predict_proba(self, X):
+        print("ERROR: predict_proba called on a regression model")
+
     def get_best_iteration(self) -> int:
         return self.model.n_iter_
 

@@ -5,7 +5,7 @@ import pickle
 import seaborn as sns
 import matplotlib.pyplot as plt
 from pandas import DataFrame, Series
-from sklearn.metrics import confusion_matrix, mean_absolute_error, mean_squared_error
+from sklearn.metrics import confusion_matrix, mean_absolute_error, mean_squared_error, roc_auc_score, accuracy_score
 
 from src.enums.accuracy_metric import AccuracyMetric
 from src.models.model_inference_wrapper import ModelInferenceWrapper
@@ -119,6 +119,12 @@ class Trainer(ABC):
     def validate_model(self, X: DataFrame, y: Series, log_level=1, iterations=None, params=None) -> (float, int):
         pass
 
+    def get_predictions(self, X: DataFrame) -> Series:
+        if self.metric == AccuracyMetric.AUC:
+            return self.model_wrapper.predict_proba(X)
+        else:
+            return self.model_wrapper.predict(X)
+
     def calculate_accuracy(self, predictions: Series, real_values: Series) -> float:
         """
         Calculates the accuracy of the provided predictions, using the metric specified when creating the trainer.
@@ -133,3 +139,7 @@ class Trainer(ABC):
                 return mean_squared_error(real_values, predictions)
             case AccuracyMetric.RMSE:
                 return math.sqrt(mean_squared_error(real_values, predictions))
+            case AccuracyMetric.AUC:
+                return roc_auc_score(real_values, predictions)
+            case AccuracyMetric.Accuracy:
+                return accuracy_score(real_values, predictions)
