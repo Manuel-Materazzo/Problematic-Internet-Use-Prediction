@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 from pandas import DataFrame, Series
 
+from src.enums.optimization_direction import OptimizationDirection
 from src.models.model_wrapper import ModelWrapper
 from src.trainers.trainer import Trainer
 
@@ -14,9 +15,11 @@ class HyperparameterOptimizer(ABC):
         self.params: dict = model_wrapper.get_starter_params()
 
     @abstractmethod
-    def tune(self, X: DataFrame, y: Series, final_lr: float) -> dict:
+    def tune(self, X: DataFrame, y: Series, final_lr: float,
+             direction: OptimizationDirection = OptimizationDirection.MINIMIZE) -> dict:
         """
         Does some computer magic to tune hyperparameters.
+        :param direction:
         :param X:
         :param y:
         :param final_lr:

@@ -2,6 +2,8 @@ import optuna
 import platform
 import optuna_distributed
 from pandas import DataFrame, Series
+
+from src.enums.optimization_direction import OptimizationDirection
 from src.hyperparameter_optimizers.hp_optimizer import HyperparameterOptimizer
 from src.models.model_wrapper import ModelWrapper
 from src.trainers.trainer import Trainer
@@ -14,10 +16,12 @@ class OptunaOptimizer(HyperparameterOptimizer):
         self.X = None
         self.domain_space = model_wrapper.get_bayesian_space()
 
-    def tune(self, X: DataFrame, y: Series, final_lr: float) -> dict:
+    def tune(self, X: DataFrame, y: Series, final_lr: float,
+             direction: OptimizationDirection = OptimizationDirection.MINIMIZE) -> dict:
         """
         Calculates the best hyperparameters for the dataset by performing a bayesian optimization
         Trains cross-validated model for each combination of hyperparameters, and picks the best based on MAE.
+        :param direction:
         :param X:
         :param y:
         :param final_lr:
@@ -26,7 +30,7 @@ class OptunaOptimizer(HyperparameterOptimizer):
         self.X = X
         self.y = y
 
-        study = optuna.create_study(direction='minimize')
+        study = optuna.create_study(direction=direction.value.lower())
         # leverage distributed training on linux
         if platform.system() != 'Windows':
             study = optuna_distributed.from_study(study)
