@@ -134,6 +134,7 @@ class Ensemble(ModelInferenceWrapper):
         """
         # set log level
         optuna.logging.set_verbosity(optuna.logging.ERROR)
+        optuna_distributed.config.disable_logging()
         # create a study
         sampler = optuna.samplers.CmaEsSampler(seed=0)
         pruner = optuna.pruners.HyperbandPruner()
