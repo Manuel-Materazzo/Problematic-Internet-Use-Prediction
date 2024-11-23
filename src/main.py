@@ -1,5 +1,6 @@
 import pandas as pd
 import time
+import re
 
 from src.enums.accuracy_metric import AccuracyMetric
 from src.models.xgb_regressor import XGBRegressorWrapper
@@ -18,13 +19,15 @@ from src.trainers.trainer import save_model
 
 def load_data():
     # Load the data
-    iowa_file_path = '../resources/train.csv'
-    home_data = pd.read_csv(iowa_file_path)
+    file_path = '../resources/train.csv'
+    data = pd.read_csv(file_path)
+    # standardize column names
+    data = data.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '_', x))
 
     # Remove rows with missing target, separate target from predictors
-    pruned_home_data = home_data.dropna(axis=0, subset=['SalePrice'])
-    y = pruned_home_data.SalePrice
-    X = pruned_home_data.drop(['SalePrice'], axis=1)
+    pruned_data = data.dropna(axis=0, subset=['SalePrice'])
+    y = pruned_data['SalePrice']
+    X = pruned_data.drop(['SalePrice'], axis=1)
     return X, y
 
 
