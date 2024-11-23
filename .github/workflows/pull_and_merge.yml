@@ -1,0 +1,61 @@
+name: Pull and Merge from BoostUtils
+
+on:
+#  push:
+#    branches:
+#      - master
+#  schedule:
+#    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  pull_and_merge:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Git config
+        run: |
+          git config --global user.name "${{ secrets.GIT_USER_NAME }}"
+          git config --global user.email "${{ secrets.GIT_USER_EMAIL }}"
+
+      - name: Authenticate with PAT
+        env:
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+        run: |
+          git remote set-url origin https://${{ secrets.ACTIONS_PAT }}@github.com/[REPO URL].git
+
+      - name: Pull changes from BoostUtils
+        continue-on-error: true
+        run: |
+          git remote add boost-utils https://github.com/Manuel-Materazzo/BoostUtils.git
+          git fetch boost-utils
+          git config pull.rebase false
+          git pull boost-utils master --allow-unrelated-histories
+
+      - name: Resolve conflicts automatically
+        run: |
+          git checkout --theirs .
+          git checkout --ours src/main.py
+          git checkout --ours src/pipelines/housing_prices_competition_dt_pipeline.py
+          git checkout --ours resources/
+          git checkout --ours .github/
+          git checkout --ours README.md
+          git add . 
+          git reset src/pipelines/housing_prices_competition_dt_pipeline.py resources/ .github/ README.md src/main_ensemble.py
+
+      - name: Push changes to new branch
+        continue-on-error: true
+        env:
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+        run: |
+          git branch -D conflict-resolution || true
+          git checkout -b conflict-resolution
+          git add .
+          git reset src/pipelines/housing_prices_competition_dt_pipeline.py resources/ .github/ README.md src/main_ensemble.py
+          git commit -m "Pull changes from BoostUtils"
+          git push -u origin conflict-resolution --force
+          gh auth login --with-token <<<"${{ secrets.ACTIONS_PAT }}"
+          gh pr create --title "Resolve merge conflicts or updates" --body "This PR resolves merge conflicts or includes updates that occurred during the sync." --head conflict-resolution --base master
