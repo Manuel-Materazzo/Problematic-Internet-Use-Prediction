@@ -4,7 +4,7 @@
   </div>
     <h1>BoostUtils</h1>
   <b>
-    A Python framework for training, optimizing and deploying XGBoost models.
+    A Python framework for training, optimizing and deploying Boosting Regressor and Classification models.
   </b><br>
 <small>Simplify your fitting and deployment routine today!</small>
 
