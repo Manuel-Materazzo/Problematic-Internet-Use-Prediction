@@ -60,9 +60,15 @@ class Trainer(ABC):
         features = list(processed_X.columns)
         importance_df = self.model_wrapper.get_feature_importance(features)
 
+        # Convert to percentage
+        total_importance = importance_df['importance'].sum()
+        importance_df['importance'] = importance_df['importance'] / total_importance * 100
+
         print(importance_df)
         # plot it!
         plt.figure(figsize=(12, 8))
+        plt.xlabel('Importance %')
+        plt.ylabel('Feature Type__Name')
         sns.barplot(data=importance_df, x='importance', y='feats')
         plt.show()
 
