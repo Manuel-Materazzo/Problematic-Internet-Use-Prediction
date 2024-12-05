@@ -1,4 +1,6 @@
 from abc import abstractmethod
+
+from src.enums.objective import Objective
 from src.models.model_inference_wrapper import ModelInferenceWrapper
 
 
@@ -9,6 +11,14 @@ class ModelWrapper(ModelInferenceWrapper):
 
     def __init__(self):
         self.model = None
+
+    @abstractmethod
+    def get_objective(self) -> Objective:
+        """
+        Returns the model default objective.
+        :return:
+        """
+        pass
 
     @abstractmethod
     def get_base_model(self, iterations, params) -> any:

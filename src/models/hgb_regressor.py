@@ -2,6 +2,7 @@ import pandas as pd
 from pandas import DataFrame
 from hyperopt import hp
 
+from src.enums.objective import Objective
 from src.models.model_wrapper import ModelWrapper
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.inspection import permutation_importance
@@ -12,6 +13,9 @@ class HGBRegressorWrapper(ModelWrapper):
     def __init__(self):
         super().__init__()
         self.importances = None
+
+    def get_objective(self) -> Objective:
+        return Objective.REGRESSION
 
     def get_base_model(self, iterations, params):
         params.update({

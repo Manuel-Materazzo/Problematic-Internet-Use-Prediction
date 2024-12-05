@@ -3,6 +3,7 @@ from pandas import DataFrame
 from hyperopt import hp
 from xgboost import XGBClassifier
 
+from src.enums.objective import Objective
 from src.models.model_wrapper import ModelWrapper
 
 
@@ -10,6 +11,9 @@ class XGBClassifierWrapper(ModelWrapper):
 
     def __init__(self):
         super().__init__()
+
+    def get_objective(self) -> Objective:
+        return Objective.CLASSIFICATION
 
     def get_base_model(self, iterations, params):
         params.update({
