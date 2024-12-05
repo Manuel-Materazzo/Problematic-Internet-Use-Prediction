@@ -11,8 +11,9 @@ from src.trainers.trainer import Trainer
 
 class AccurateCrossTrainer(Trainer):
 
-    def __init__(self, pipeline: DTPipeline, model_wrapper: ModelWrapper, metric: AccuracyMetric = AccuracyMetric.MAE):
-        super().__init__(pipeline, model_wrapper, metric=metric)
+    def __init__(self, pipeline: DTPipeline, model_wrapper: ModelWrapper, metric: AccuracyMetric = AccuracyMetric.MAE,
+                 grouping_columns: list[str] = None):
+        super().__init__(pipeline, model_wrapper, metric=metric, grouping_columns=grouping_columns)
 
     def __cross_train(self, X: DataFrame, y: Series, train_index: int, val_index: int, iterations=None,
                       params=None) -> (int, int):
@@ -71,11 +72,12 @@ class AccurateCrossTrainer(Trainer):
         :return:
         """
         # Initialize KFold
-        kf = KFold(
-            n_splits=5,  # dataset divided into 5 folds, 4 for training and 1 for validation
-            shuffle=True,
-            random_state=0
-        )
+        kf = self.get_kfold_type()
+
+        if self.grouping_columns is not None:
+            groups = X[self.grouping_columns]
+        else:
+            groups = None
 
         self.evals = []
 
@@ -84,7 +86,7 @@ class AccurateCrossTrainer(Trainer):
         best_rounds = []
 
         # Loop through each fold
-        for train_index, val_index in kf.split(X):
+        for train_index, val_index in kf.split(X, y, groups):
             best_iteration, mae = self.__cross_train(X, y, train_index, val_index, iterations=iterations, params=params)
 
             best_rounds.append(best_iteration or 0)

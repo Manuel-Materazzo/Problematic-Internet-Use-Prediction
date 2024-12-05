@@ -10,8 +10,9 @@ from src.trainers.trainer import Trainer
 
 class SimpleTrainer(Trainer):
 
-    def __init__(self, pipeline: DTPipeline, model_wrapper: ModelWrapper, metric: AccuracyMetric = AccuracyMetric.MAE):
-        super().__init__(pipeline, model_wrapper, metric=metric)
+    def __init__(self, pipeline: DTPipeline, model_wrapper: ModelWrapper, metric: AccuracyMetric = AccuracyMetric.MAE,
+                 grouping_columns: list[str] = None):
+        super().__init__(pipeline, model_wrapper, metric=metric, grouping_columns=grouping_columns)
 
     def validate_model(self, X: DataFrame, y: Series, log_level=1, iterations=None, params=None) -> (float, int):
         """

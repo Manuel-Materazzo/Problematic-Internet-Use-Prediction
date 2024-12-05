@@ -3,11 +3,11 @@ import time
 import re
 
 from src.enums.accuracy_metric import AccuracyMetric
+from src.enums.optimization_direction import OptimizationDirection
 from src.models.xgb_regressor import XGBRegressorWrapper
 from src.pipelines.dt_pipeline import save_data_model
 from src.pipelines.housing_prices_competition_dt_pipeline import HousingPricesCompetitionDTPipeline
 from src.trainers.simple_trainer import SimpleTrainer
-from src.trainers.fast_cross_trainer import FastCrossTrainer
 from src.trainers.accurate_cross_trainer import AccurateCrossTrainer
 from src.trainers.cached_accurate_cross_trainer import CachedAccurateCrossTrainer
 from src.hyperparameter_optimizers.custom_grid_optimizer import CustomGridOptimizer
@@ -43,8 +43,8 @@ pipeline = HousingPricesCompetitionDTPipeline(X, True)
 
 # pick a model, a trainer and an optimizer
 model_type = XGBRegressorWrapper()
-trainer = CachedAccurateCrossTrainer(pipeline, model_type, X, y)
-optimizer = DefaultGridOptimizer(trainer, model_type)
+trainer = CachedAccurateCrossTrainer(pipeline, model_type, X, y, metric=AccuracyMetric.MAE, grouping_columns=None)
+optimizer = DefaultGridOptimizer(trainer, model_type, direction=OptimizationDirection.MINIMIZE)
 
 # optimize parameters
 print("Tuning Hyperparameters...")

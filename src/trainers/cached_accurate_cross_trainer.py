@@ -13,12 +13,12 @@ from src.trainers.trainer import Trainer
 
 class CachedAccurateCrossTrainer(Trainer):
     """
-    Wrapper of SimpleTrainer that takes X and Y at initialization time and caches kfold splits.
+    Wrapper of AccurateCrossTrainer that takes X and Y at initialization time and caches kfold splits.
     """
 
     def __init__(self, pipeline: DTPipeline, model_wrapper: ModelWrapper, X: DataFrame, y: Series,
-                 metric: AccuracyMetric = AccuracyMetric.MAE):
-        super().__init__(pipeline, model_wrapper, metric=metric)
+                 metric: AccuracyMetric = AccuracyMetric.MAE, grouping_columns: list[str] = None):
+        super().__init__(pipeline, model_wrapper, metric=metric, grouping_columns=grouping_columns)
         self.X = X
         self.y = y
         self.splits = self.__cache_splits()
@@ -29,15 +29,16 @@ class CachedAccurateCrossTrainer(Trainer):
         Splits X and y into 5 folds at initialization time and returns them as a list.
         :return:
         """
-        kf = KFold(
-            n_splits=5,
-            shuffle=True,
-            random_state=0
-        )
+        kf = self.get_kfold_type()
 
         splits = []
 
-        for train_index, val_index in kf.split(self.X):
+        if self.grouping_columns is not None:
+            groups = self.X[self.grouping_columns]
+        else:
+            groups = None
+
+        for train_index, val_index in kf.split(self.X, self.y, groups):
             # split train and validation data
             train_X, val_X = self.X.iloc[train_index], self.X.iloc[val_index]
             train_y, val_y = self.y.iloc[train_index], self.y.iloc[val_index]
