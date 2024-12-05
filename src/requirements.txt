@@ -17,3 +17,6 @@ lightgbm==4.5.0
 cmaes==0.11.1
 optuna_distributed==0.7.0
 dask-expr==1.1.19
+emoji==2.14.0
+nltk==3.9.1
+ftfy==6.3.1
