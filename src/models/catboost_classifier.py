@@ -1,33 +1,33 @@
 import pandas as pd
 from pandas import DataFrame
 from hyperopt import hp
-from catboost import CatBoostRegressor
+from catboost import CatBoostClassifier
 
 from src.enums.objective import Objective
 from src.models.model_wrapper import ModelWrapper
 
 
-class CatBoostRegressorWrapper(ModelWrapper):
+class CatBoostClassifierWrapper(ModelWrapper):
 
     def __init__(self):
         super().__init__()
 
     def get_objective(self) -> Objective:
-        return Objective.REGRESSION
+        return Objective.CLASSIFICATION
 
     def get_base_model(self, iterations, params):
         params.update({
             'random_state': 0,
             'iterations': iterations,
         })
-        return CatBoostRegressor(
+        return CatBoostClassifier(
             **params,
             silent=True
         )
 
     def get_starter_params(self) -> dict:
         return {
-            'loss_function': 'RMSE',
+            'loss_function': 'AUC',
             # 'bootstrap_type': 'Bayesian',  # removed, let catboost decide
             'grow_policy': 'SymmetricTree',
             'bagging_temperature': 0.50,
@@ -77,7 +77,7 @@ class CatBoostRegressorWrapper(ModelWrapper):
             'iterations': iterations,
         })
 
-        self.model: CatBoostRegressor = CatBoostRegressor(
+        self.model: CatBoostClassifier = CatBoostClassifier(
             **params,
             silent=True
         )
@@ -91,7 +91,7 @@ class CatBoostRegressorWrapper(ModelWrapper):
             'iterations': 2000,
             'early_stopping_rounds': 5,
         })
-        self.model: CatBoostRegressor = CatBoostRegressor(
+        self.model: CatBoostClassifier = CatBoostClassifier(
             **params,
             silent=True
         )
@@ -101,7 +101,7 @@ class CatBoostRegressorWrapper(ModelWrapper):
         return self.model.predict(X)
 
     def predict_proba(self, X):
-        print("ERROR: predict_proba called on a regression model")
+        return self.model.predict_proba(X)[:, 1]
 
     def get_best_iteration(self) -> int:
         return self.model.get_best_iteration()

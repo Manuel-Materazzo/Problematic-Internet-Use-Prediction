@@ -5,7 +5,7 @@ import re
 from src.ensembles.ensemble import Ensemble
 from src.models.xgb_regressor import XGBRegressorWrapper
 from src.models.lgbm_regressor import LGBMRegressorWrapper
-from src.models.catboost_regressor import CatBoostWrapper
+from src.models.catboost_regressor import CatBoostRegressorWrapper
 
 from src.pipelines.dt_pipeline import save_data_model
 from src.pipelines.housing_prices_competition_dt_pipeline import HousingPricesCompetitionDTPipeline
@@ -42,7 +42,7 @@ save_data_model(X)
 pipeline = HousingPricesCompetitionDTPipeline(X, True)
 
 # create model trainer and optimizer for catboost
-catboost_model_type = CatBoostWrapper()
+catboost_model_type = CatBoostRegressorWrapper()
 catboost_trainer = CachedAccurateCrossTrainer(pipeline, catboost_model_type, X, y)
 catboost_optimizer = OptunaOptimizer(catboost_trainer, catboost_model_type)
 
