@@ -29,14 +29,17 @@ class LGBMRegressorWrapper(ModelWrapper):
         return {
             'boosting_type': 'gbdt',
             'force_col_wise': True,
-            'num_leaves': 31,
-            'max_depth': -1,
+            'num_leaves': 64,
+            'max_depth': 10,  # was -1 (better?)
             'learning_rate': 0.1,
-            'n_estimators': 100,
+            'n_estimators': 20000,
             'min_child_samples': 20,
-            'reg_alpha': 0.0,
-            'reg_lambda': 0.0,
-            'colsample_bytree': 1.0,
+            'reg_alpha': 0.2,
+            'reg_lambda': 5,
+            'colsample_bytree': 0.6,  # was 1.0, sometimes better
+            "colsample_bynode": 0.6,  # new
+            "extra_trees": True,  # new (better without, but helps reduce overfitting)
+            "max_bin": 255,  # new
             'subsample': 1.0,
             'n_jobs': -1,
             'random_state': 0
@@ -63,13 +66,15 @@ class LGBMRegressorWrapper(ModelWrapper):
 
     def get_bayesian_space(self) -> dict:
         return {
-            "num_leaves": hp.quniform("num_leaves", 10, 150, 1),
+            # 'n_estimators': trial.suggest_int('n_estimators', 500, 1500),
+            # 'learning_rate': trial.suggest_float('learning_rate', 1e-4, 0.5, log=True),
+            "num_leaves": hp.quniform("num_leaves", 8, 64, 1),  # was 10-150
             "max_depth": hp.quniform("max_depth", 3, 12, 1),
             "min_child_samples": hp.quniform("min_child_samples", 5, 100, 1),
             "subsample": hp.uniform("subsample", 0.5, 1.0),
             "colsample_bytree": hp.uniform("colsample_bytree", 0.5, 1.0),
-            # "reg_alpha": trial.suggest_loguniform("reg_alpha", 1e-3, 10.0),
-            # "reg_lambda": trial.suggest_loguniform("reg_lambda", 1e-3, 10.0),
+            # "reg_alpha": trial.suggest_loguniform("reg_alpha", 1e-3, 10.0), # yun confirmation
+            # "reg_lambda": trial.suggest_loguniform("reg_lambda", 1e-3, 10.0), # yun confirmation
             'reg_alpha': hp.uniform('reg_alpha', 0, 10),
             'reg_lambda': hp.uniform('reg_lambda', 0, 1)
         }

@@ -28,11 +28,14 @@ class CatBoostWrapper(ModelWrapper):
     def get_starter_params(self) -> dict:
         return {
             'loss_function': 'RMSE',
-            'bootstrap_type': 'Bayesian',
+            # 'bootstrap_type': 'Bayesian',  # removed, let catboost decide
             'grow_policy': 'SymmetricTree',
+            'bagging_temperature': 0.50,
             'learning_rate': 0.1,
             'depth': 6,
-            'l2_leaf_reg': 3.0,
+            'l2_leaf_reg': 1.25,  # was 3.0
+            'min_data_in_leaf': 24,
+            # 'random_strength': 0.25, # ignored, prevents overfitting, but it's not mandatory
             'thread_count': -1
         }
 
