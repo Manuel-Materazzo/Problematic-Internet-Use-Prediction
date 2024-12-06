@@ -2,7 +2,7 @@ import pandas as pd
 import time
 import re
 
-from src.ensembles.ensemble import Ensemble
+from src.ensembles.weighted_ensemble import WeightedEnsemble
 from src.models.xgb_regressor import XGBRegressorWrapper
 from src.models.lgbm_regressor import LGBMRegressorWrapper
 from src.models.catboost_regressor import CatBoostRegressorWrapper
@@ -47,7 +47,7 @@ catboost_trainer = CachedAccurateCrossTrainer(pipeline, catboost_model_type, X, 
 catboost_optimizer = OptunaOptimizer(catboost_trainer, catboost_model_type)
 
 # define an ensemble of an XGBoost model with predefined params, and a CatBoost model with auto-optimization
-ensemble = Ensemble(members=[
+ensemble = WeightedEnsemble(members=[
     {
         'trainer': CachedAccurateCrossTrainer(pipeline, XGBRegressorWrapper(), X, y),
         'params': {
@@ -71,22 +71,19 @@ ensemble = Ensemble(members=[
 ])
 
 # train models and compute a cross-validation score leaderboard
-# this step also auto-optimizes the params
+# this step auto-optimizes the params when needed
 print("Tuning Hyperparams and Generating model ensemble leaderboard...")
 start = time.time()
-ensemble.show_leaderboard(X, y)
+ensemble.validate_models_and_show_leaderboard(X, y)
 end = time.time()
 print("Leaderboard generation took {} seconds".format(end - start))
 
-# train models and find optimal ensemble weights
-# this step also auto-optimizes the params if not done before
+# show ensemble weights
 print("Optimizing ensemble weights...")
-ensemble.optimize_weights(X, y)
 ensemble.show_weights()
 
 # fit ensemble on all data from the training data
 ensemble.train(X, y)
-
 
 # save trained pipeline on target directory
 print("Saving pipeline...")
