@@ -78,7 +78,7 @@ class DTPipeline(ABC):
     def find_one_hot_encoder(self, transformer):
         """
         Checks if the pipeline contains one hot encoder and returns the instance.
-        :param pipeline:
+        :param transformer:
         :return:
         """
         if isinstance(transformer, Pipeline):

@@ -33,7 +33,7 @@ def generate_yearly_features(df: DataFrame, date_col: str, date_format: str = No
 
 def generate_daily_features(df: DataFrame, time_col: str, seconds: bool = False, time_format: str = None) -> DataFrame:
     """
-    Generates seasonality cycle features for a dataframe.
+    Generates day cycle features for a dataframe.
     :param time_format:
     :param seconds:
     :param time_col:
