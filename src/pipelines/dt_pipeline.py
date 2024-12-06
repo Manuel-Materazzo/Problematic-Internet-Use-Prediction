@@ -51,6 +51,7 @@ class DTPipeline(ABC):
         :param dataframe:
         :return:
         """
+        set_config(transform_output="pandas")
         imputed_dataframe = pd.DataFrame(self.pipeline.fit_transform(dataframe))
         return imputed_dataframe
 

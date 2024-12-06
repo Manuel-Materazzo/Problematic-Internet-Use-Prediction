@@ -37,7 +37,7 @@ class OptunaOptimizer(HyperparameterOptimizer):
         # leverage distributed training on linux
         if platform.system() != 'Windows':
             self.study = optuna_distributed.from_study(self.study)
-        self.study.optimize(self.__objective, n_trials=100, n_jobs=-1)
+        self.study.optimize(self.__objective, n_trials=100)
         self.params.update(self.study.best_params)
 
         self.params['learning_rate'] = final_lr

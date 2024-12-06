@@ -51,7 +51,6 @@ class CustomGridOptimizer(HyperparameterOptimizer):
                          log_level=1) -> dict:
         """
         Trains cross-validated model for each combination of the provided hyperparameters, and picks the best based on MAE
-        :param pipeline:
         :param X:
         :param y:
         :param param_grid:
