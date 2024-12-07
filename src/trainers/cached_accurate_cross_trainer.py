@@ -6,7 +6,6 @@ from scipy.stats import trim_mean
 from src.enums.accuracy_metric import AccuracyMetric
 from src.models.model_wrapper import ModelWrapper
 from src.pipelines.dt_pipeline import DTPipeline
-from sklearn.model_selection import KFold
 
 from src.trainers.accurate_cross_trainer import AccurateCrossTrainer
 from src.trainers.trainer import Trainer

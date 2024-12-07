@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 from scipy.stats import trim_mean
-from sklearn.model_selection import KFold
 
 from src.enums.accuracy_metric import AccuracyMetric
 from src.models.model_wrapper import ModelWrapper

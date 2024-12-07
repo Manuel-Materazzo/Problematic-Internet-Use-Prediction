@@ -13,6 +13,7 @@ class HyperoptBayesianOptimizer(HyperparameterOptimizer):
         super().__init__(trainer, model_wrapper, direction=direction)
         self.y = None
         self.X = None
+        self.trials = 100
         self.direction = OptimizationDirection.MINIMIZE
         self.domain_space = model_wrapper.get_bayesian_space()
         self.model_wrapper = model_wrapper
@@ -34,7 +35,7 @@ class HyperoptBayesianOptimizer(HyperparameterOptimizer):
         best_hyperparams = fmin(fn=self.__objective,
                                 space=self.domain_space,
                                 algo=tpe.suggest,
-                                max_evals=100,
+                                max_evals=self.trials,
                                 trials=trials)
 
         self.params.update(
