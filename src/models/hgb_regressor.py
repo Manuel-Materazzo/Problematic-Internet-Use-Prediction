@@ -67,7 +67,6 @@ class HGBRegressorWrapper(ModelWrapper):
 
     def fit(self, X, y, iterations, params=None):
         self.train_until_optimal(X, None, y, None, params=params)
-        self.importances = permutation_importance(self.model, X, y, n_repeats=10, random_state=0)
 
     def train_until_optimal(self, train_X, validation_X, train_y, validation_y, params=None):
         params = params or {}
@@ -86,6 +85,7 @@ class HGBRegressorWrapper(ModelWrapper):
         # and won't need validation sets for early stopping.
         # Avoid merging in validation_X and validation_y, as it will cause Train data leakage when cross validating.
         self.model.fit(train_X, train_y)
+        self.importances = permutation_importance(self.model, train_X, train_y, n_repeats=10, random_state=0)
 
     def predict(self, X) -> any:
         return self.model.predict(X)
