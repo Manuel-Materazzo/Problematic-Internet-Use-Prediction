@@ -2,3 +2,6 @@
 /target/
 /src/catboost_info/
 /src/submission.csv
+/catboost_info/
+/.venv/
+/tests/trainers/catboost_info/
