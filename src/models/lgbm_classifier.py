@@ -7,7 +7,7 @@ from src.enums.objective import Objective
 from src.models.model_wrapper import ModelWrapper
 
 
-class LGBMRegressorWrapper(ModelWrapper):
+class LGBMClassifierWrapper(ModelWrapper):
 
     def __init__(self):
         super().__init__()
