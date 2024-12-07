@@ -41,6 +41,8 @@ class DefaultGridOptimizer(HyperparameterOptimizer):
         # get a list of spaces to optimize using sequential steps
         for step_space in self.model_wrapper.get_grid_space():
 
+            step_space = step_space.copy()
+
             # recalibrate iteration if needed
             if step_space['recalibrate_iterations']:
                 optimal_br = self.get_optimal_boost_rounds(X, y)
