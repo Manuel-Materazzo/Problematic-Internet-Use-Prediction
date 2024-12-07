@@ -71,7 +71,8 @@ class CatBoostClassifierWrapper(ModelWrapper):
         }
 
     def fit(self, X, y, iterations, params=None):
-        params = params.copy() or {}
+        params = params or {}
+        params = params.copy()
         params.update({
             'random_state': 0,
             'iterations': iterations,
@@ -85,7 +86,8 @@ class CatBoostClassifierWrapper(ModelWrapper):
         self.model.fit(X, y, silent=True)
 
     def train_until_optimal(self, train_X, validation_X, train_y, validation_y, params=None):
-        params = params.copy() or {}
+        params = params or {}
+        params = params.copy()
         params.update({
             'random_state': 0,
             'iterations': 2000,

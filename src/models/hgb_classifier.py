@@ -70,7 +70,8 @@ class HGBRegressorWrapper(ModelWrapper):
         self.importances = permutation_importance(self.model, X, y, n_repeats=10, random_state=0)
 
     def train_until_optimal(self, train_X, validation_X, train_y, validation_y, params=None):
-        params = params.copy() or {}
+        params = params or {}
+        params = params.copy()
         params.update({
             'random_state': 0,
             'max_iter': 2000,

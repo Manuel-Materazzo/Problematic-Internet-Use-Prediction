@@ -72,7 +72,8 @@ class XGBClassifierWrapper(ModelWrapper):
         }
 
     def fit(self, X, y, iterations, params=None):
-        params = params.copy() or {}
+        params = params or {}
+        params = params.copy()
         params.update({
             'random_state': 0,
             'n_estimators': iterations,
@@ -85,7 +86,8 @@ class XGBClassifierWrapper(ModelWrapper):
         self.model.fit(X, y)
 
     def train_until_optimal(self, train_X, validation_X, train_y, validation_y, params=None):
-        params = params.copy() or {}
+        params = params or {}
+        params = params.copy()
         params.update({
             'random_state': 0,
             'n_estimators': 2000,
