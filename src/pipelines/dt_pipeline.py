@@ -13,7 +13,8 @@ from src.utils.json_utils import map_dtype
 
 
 def load_pipeline() -> any:
-    with open('../target/pipeline.pkl', 'rb') as file:
+    path = os.path.dirname(os.path.realpath(__file__)) + '/../../target/pipeline.pkl'
+    with open(path, 'rb') as file:
         return pickle.load(file)
 
 
@@ -91,7 +92,7 @@ class DTPipeline(ABC):
                 if result is not None:
                     return result
         elif isinstance(transformer, ColumnTransformer):
-            for name, trans, columns in transformer.transformers_:
+            for name, trans, columns in transformer.transformers:
                 result = self.find_one_hot_encoder(trans)
                 if result is not None:
                     return result
