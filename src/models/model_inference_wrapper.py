@@ -8,4 +8,8 @@ class ModelInferenceWrapper(ABC):
 
     @abstractmethod
     def predict(self, X):
-        pass
+        """
+        Generate predictions based on input data.
+        :param X:
+        :return:
+        """
