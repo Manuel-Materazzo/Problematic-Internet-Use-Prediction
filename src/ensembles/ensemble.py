@@ -108,8 +108,17 @@ class Ensemble(ModelInferenceWrapper):
 
     @abstractmethod
     def predict(self, X: DataFrame) -> Series:
-        pass
+        """
+        Predicts the target for the given input data.
+        :param X:
+        :return:
+        """
 
     @abstractmethod
     def post_validation_callback(self, X: DataFrame, y: Series):
-        pass
+        """
+        Callback when done validating.
+        :param X:
+        :param y:
+        :return:
+        """

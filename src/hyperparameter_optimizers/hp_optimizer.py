@@ -25,7 +25,6 @@ class HyperparameterOptimizer(ABC):
         :param final_lr:
         :return:
         """
-        pass
 
     def get_optimal_boost_rounds(self, X: DataFrame, y: Series) -> int:
         """

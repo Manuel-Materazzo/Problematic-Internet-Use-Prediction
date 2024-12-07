@@ -43,7 +43,10 @@ class DTPipeline(ABC):
 
     @abstractmethod
     def build_pipeline(self) -> Pipeline | ColumnTransformer:
-        pass
+        """
+        Builds the pipeline
+        :return:
+        """
 
     def fit_transform(self, dataframe: DataFrame) -> DataFrame:
         """

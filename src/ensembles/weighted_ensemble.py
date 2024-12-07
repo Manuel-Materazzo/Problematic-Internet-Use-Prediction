@@ -18,7 +18,6 @@ class WeightedEnsemble(Ensemble):
     def post_validation_callback(self, X: DataFrame, y: Series):
         """
         Callback to optimize weights when done training. Do not call manually.
-        :param prediction_comparisons:
         :param X:
         :param y:
         :return:

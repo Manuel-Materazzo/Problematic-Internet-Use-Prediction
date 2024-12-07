@@ -146,7 +146,16 @@ class Trainer(ABC):
     @abstractmethod
     def validate_model(self, X: DataFrame, y: Series, log_level=1, iterations=None, params=None,
                        output_prediction_comparison=False) -> (float, int, DataFrame):
-        pass
+        """
+        Validates the model.
+        :param X:
+        :param y:
+        :param log_level:
+        :param iterations:
+        :param params:
+        :param output_prediction_comparison:
+        :return:
+        """
 
     def get_predictions(self, X: DataFrame) -> Series:
         if self.metric == AccuracyMetric.AUC:
