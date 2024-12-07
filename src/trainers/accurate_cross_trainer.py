@@ -133,6 +133,6 @@ class AccurateCrossTrainer(Trainer):
         # Cross validate model with the optimal boosting round, to check on MAE discrepancies
         if iterations is None and log_level > 0:
             print("Generating {} with optimal iterations".format(self.metric.value))
-            self.validate_model(X, y, optimal_boost_rounds, log_level=1, params=params)
+            self.validate_model(X, y, optimal_boost_rounds, params=params)
 
         return mean_accuracy, optimal_boost_rounds, oof_prediction_comparisons
