@@ -41,8 +41,8 @@ class XGBRegressorWrapper(ModelWrapper):
         return [
             {
                 'recalibrate_iterations': False,
-                'max_depth': range(3, 10),
-                'min_child_weight': range(1, 6)
+                'max_depth': list(range(3, 10)),
+                'min_child_weight': list(range(1, 6))
             },
             {
                 'recalibrate_iterations': False,

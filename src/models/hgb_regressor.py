@@ -42,8 +42,8 @@ class HGBRegressorWrapper(ModelWrapper):
         return [
             {
                 'recalibrate_iterations': False,
-                'max_depth': range(3, 10),
-                'min_samples_leaf': range(20, 101, 20)
+                'max_depth': list(range(3, 10)),
+                'min_samples_leaf': list(range(20, 101, 20))
             },
             {
                 'recalibrate_iterations': False,

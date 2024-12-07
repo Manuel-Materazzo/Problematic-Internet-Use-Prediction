@@ -27,7 +27,7 @@ class CatBoostClassifierWrapper(ModelWrapper):
 
     def get_starter_params(self) -> dict:
         return {
-            'loss_function': 'AUC',
+            'loss_function': 'Logloss',
             # 'bootstrap_type': 'Bayesian',  # removed, let catboost decide
             'grow_policy': 'SymmetricTree',
             'bagging_temperature': 0.50,

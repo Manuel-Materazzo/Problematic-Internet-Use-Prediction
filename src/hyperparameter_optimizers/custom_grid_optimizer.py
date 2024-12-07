@@ -86,7 +86,7 @@ class CustomGridOptimizer(HyperparameterOptimizer):
 
         if log_level > 0:
             print("Best parameters found: ", best_params)
-            print("Best acciracy: {}".format(best_score))
+            print("Best accuracy: {}".format(best_score))
 
         if log_level > 1:
             # Print all results

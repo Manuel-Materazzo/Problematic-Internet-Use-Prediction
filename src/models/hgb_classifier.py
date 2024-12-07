@@ -27,7 +27,7 @@ class HGBClassifierWrapper(ModelWrapper):
 
     def get_starter_params(self) -> dict:
         return {
-            'loss': 'squared_error',
+            'loss': 'log_loss',
             'random_state': 0,
             'learning_rate': 0.1,
             'max_depth': None,
@@ -42,8 +42,8 @@ class HGBClassifierWrapper(ModelWrapper):
         return [
             {
                 'recalibrate_iterations': False,
-                'max_depth': range(3, 10),
-                'min_samples_leaf': range(20, 101, 20)
+                'max_depth': list(range(3, 10)),
+                'min_samples_leaf': list(range(20, 101, 20))
             },
             {
                 'recalibrate_iterations': False,
