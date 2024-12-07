@@ -144,7 +144,8 @@ class Trainer(ABC):
         return self.model_wrapper
 
     @abstractmethod
-    def validate_model(self, X: DataFrame, y: Series, log_level=1, iterations=None, params=None) -> (float, int):
+    def validate_model(self, X: DataFrame, y: Series, log_level=1, iterations=None, params=None,
+                       output_prediction_comparison=False) -> (float, int, DataFrame):
         pass
 
     def get_predictions(self, X: DataFrame) -> Series:

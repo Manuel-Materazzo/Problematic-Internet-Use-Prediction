@@ -14,10 +14,12 @@ class SimpleTrainer(Trainer):
                  grouping_columns: list[str] = None):
         super().__init__(pipeline, model_wrapper, metric=metric, grouping_columns=grouping_columns)
 
-    def validate_model(self, X: DataFrame, y: Series, log_level=1, iterations=None, params=None) -> (float, int):
+    def validate_model(self, X: DataFrame, y: Series, log_level=1, iterations=None, params=None,
+                       output_prediction_comparison=False) -> (float, int, DataFrame):
         """
         Trains a Model on the provided training data by splitting it into training and validation sets.
         This uses early stopping and will return the optimal number of iterations alongside the accuracy.
+        :param output_prediction_comparison: whether to output a dataframe containing predictions and actual values.
         :param iterations: ignored
         :param log_level:
         :param X:
@@ -39,4 +41,10 @@ class SimpleTrainer(Trainer):
         if log_level > 0:
             print("Validation {}: {}".format(self.metric.value, accuracy))
 
-        return accuracy, self.model_wrapper.get_best_iteration()
+        # create a dataframe with comparison
+        if output_prediction_comparison:
+            prediction_comparison = pd.DataFrame({'real_values': val_y, 'predictions': list(predictions)})
+        else:
+            prediction_comparison = None
+
+        return accuracy, self.model_wrapper.get_best_iteration(), prediction_comparison

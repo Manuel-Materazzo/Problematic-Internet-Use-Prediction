@@ -61,5 +61,5 @@ class HyperoptBayesianOptimizer(HyperparameterOptimizer):
             return {'status': STATUS_FAIL}
 
         params = self.space_to_params(space)
-        accuracy, _ = self.trainer.validate_model(self.X, self.y, log_level=0, params=params)
+        accuracy, _, _ = self.trainer.validate_model(self.X, self.y, log_level=0, params=params)
         return {'loss': multiplier * accuracy, 'status': STATUS_OK}

@@ -60,7 +60,7 @@ class Ensemble(ModelInferenceWrapper):
                     print("Optimal hyperparams: {}".format(params))
 
                 # train model
-                accuracy, iterations = trainer.validate_model(X, y, log_level=0, params=params)
+                accuracy, iterations, prediction_comparisons = trainer.validate_model(X, y, log_level=0, params=params, output_prediction_comparison=True)
                 # append model results to the leaderboard
                 leaderboardList.append(
                     LeaderboardEntry(model_name=trainer.get_model_name(), accuracy=accuracy, iterations=iterations)

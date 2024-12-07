@@ -18,6 +18,7 @@ class WeightedEnsemble(Ensemble):
     def post_validation_callback(self, X: DataFrame, y: Series):
         """
         Callback to optimize weights when done training. Do not call manually.
+        :param prediction_comparisons:
         :param X:
         :param y:
         :return:
@@ -25,21 +26,16 @@ class WeightedEnsemble(Ensemble):
         print("Optimizing ensemble weights...")
         self.__optimize_weights(X, y)
 
-    def show_weights(self, X: DataFrame = None, y: Series = None):
+    def show_weights(self):
         """
         Shows ensemble weights
-        :param X:
-        :param y:
         :return:
         """
 
         if self.weights is None:
-            if y is None or X is None:
-                print("Weights are still not optimized."
-                      "This probably means the validation was skipped or the callback is set incorrectly."
-                      "You can force weights optimization by providing X and y.")
-                return
-            self.__optimize_weights(X, y)
+            print("Weights are still not optimized."
+                  "This probably means the validation was skipped or the callback is set incorrectly.")
+            return
 
         # Pie chart
         weights = self.weights[self.weights >= 0.005]  # hide small weights in pie chart

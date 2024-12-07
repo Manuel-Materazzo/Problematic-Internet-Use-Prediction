@@ -75,7 +75,7 @@ class CustomGridOptimizer(HyperparameterOptimizer):
             full_params = self.params.copy()
             full_params.update(params)
 
-            accuracy, _ = self.trainer.validate_model(X, y, log_level=0, iterations=optimal_boosting_rounds,
+            accuracy, _, _ = self.trainer.validate_model(X, y, log_level=0, iterations=optimal_boosting_rounds,
                                                       params=full_params)
             results.append((params, accuracy))
 

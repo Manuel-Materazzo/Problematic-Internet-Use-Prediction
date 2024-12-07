@@ -69,5 +69,5 @@ class OptunaOptimizer(HyperparameterOptimizer):
                 case 'quniform':
                     octuna_space[param_name] = trial.suggest_int(param_name, param_low_arg, param_high_arg)
 
-        mae, _ = self.trainer.validate_model(self.X, self.y, log_level=0, params=octuna_space)
-        return mae
+        accuracy, _, _ = self.trainer.validate_model(self.X, self.y, log_level=0, params=octuna_space)
+        return accuracy
