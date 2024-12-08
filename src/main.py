@@ -55,7 +55,7 @@ end = time.time()
 print("Tuning took {} seconds".format(end - start))
 
 print("Training and evaluating model...")
-_, boost_rounds = trainer.validate_model(X, y, log_level=1, params=optimized_params)
+_, boost_rounds, _ = trainer.validate_model(X, y, log_level=1, params=optimized_params)
 print()
 
 # fit complete_model on all data from the training data
