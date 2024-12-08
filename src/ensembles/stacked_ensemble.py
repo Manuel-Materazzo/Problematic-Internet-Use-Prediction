@@ -50,15 +50,15 @@ class StackedEnsemble(Ensemble):
         sns.barplot(data=importance_df, x='importance', y='feature')
         plt.show()
 
-    def _train_meta_learner(self, prediction_comparisons: DataFrame, y: Series):
+    def _train_meta_learner(self, oof_predictions: DataFrame, y: Series):
         """
         Trains a meta-learner on the ensemble models predictions (meta-features).
-        :param prediction_comparisons:
+        :param oof_predictions:
         :param y:
         :return:
         """
         self.meta_learner = Ridge(alpha=0.1, random_state=0)
-        self.meta_learner.fit(prediction_comparisons, y)
+        self.meta_learner.fit(oof_predictions, y)
 
     def predict(self, X: DataFrame) -> Series:
         if len(self.models) == 0:

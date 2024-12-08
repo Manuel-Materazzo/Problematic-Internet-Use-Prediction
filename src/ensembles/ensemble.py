@@ -77,6 +77,7 @@ class Ensemble(ModelInferenceWrapper):
 
         # prints the leaderboard
         print(self.leaderboard)
+        self.oof_predictions.sort_index(inplace=True)
 
         # do the callback, in order to execute whatever post-processing is needed by child classes
         self.post_validation_callback(X, y, self.oof_predictions)
