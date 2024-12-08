@@ -72,7 +72,7 @@ class StackedEnsemble(Ensemble):
         # for each trained model
         for model in self.models:
             # make prediction and add to the meta-features dataframe
-            oof_predictions[model.__name__ + '_' + str(i)] = model.predict(X)
+            oof_predictions[model.__class__.__name__ + '_' + str(i)] = model.predict(X)
             i += 1
 
         # make meta-learner prediction on models output
