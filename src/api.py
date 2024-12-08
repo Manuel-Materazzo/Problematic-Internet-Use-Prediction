@@ -3,10 +3,12 @@ import json
 import uvicorn
 import pandas as pd
 from pydoc import locate
-from typing import List
+from typing import List, Type
 from fastapi import FastAPI
 from pydantic import BaseModel, create_model
 from typing import Any, Dict
+
+from pydantic.main import ModelT
 
 from src.pipelines.dt_pipeline import DTPipeline
 
@@ -18,13 +20,13 @@ with open('../target/data-model.json', 'r') as f:
     config = json.load(f)
 
 
-def create_pydantic_data_model(config: Dict[str, Any]) -> BaseModel:
-    fields = config['fields']
-    model = create_model(
+def create_pydantic_data_model(model_config: Dict[str, Any]) -> Type[ModelT]:
+    fields = model_config['fields']
+    model_type = create_model(
         'InputData',
         **{name: (locate(type_name), ...) for name, type_name in fields.items()}
     )
-    return model
+    return model_type
 
 
 # Generate the data model from config

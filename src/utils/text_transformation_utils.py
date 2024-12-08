@@ -3,6 +3,9 @@ import ftfy
 import emoji
 from nltk.corpus import stopwords
 
+word_regex = '[ \n.?!,]'
+sentence_regex = '[.?!]'
+
 
 def clean_text(text: str) -> str:
     """
@@ -52,8 +55,8 @@ def calculate_ari_score(text):
     """
     cleaned_text = clean_text(text)
     characters = len(cleaned_text)
-    words = len(re.split('[ \n.?!,]', cleaned_text))
-    sentence = len(re.split('[.?!]', cleaned_text))
+    words = len(re.split(word_regex, cleaned_text))
+    sentence = len(re.split(sentence_regex, cleaned_text))
     ari_score = 4.71 * (characters / words) + 0.5 * (words / sentence) - 21.43
     return ari_score
 
@@ -65,8 +68,8 @@ def calculate_eflaw_score(text):
     :param text:
     :return:
     """
-    W = len(re.split('[ \n.?!,]', text))
-    S = len(re.split('[.?!]', text))
+    W = len(re.split(word_regex, text))
+    S = len(re.split(sentence_regex, text))
     eflaw_score = (W + S * W) / S
     return eflaw_score
 
@@ -79,8 +82,8 @@ def calculate_clri_score(text):
     :return:
     """
     characters = len(text)
-    words = len(re.split('[ \n.?!,]', text))
-    sentence = len(re.split('[.?!]', text))
+    words = len(re.split(word_regex, text))
+    sentence = len(re.split(sentence_regex, text))
     L = 100 * characters / words
     S = 100 * sentence / words
     clri_score = 0.0588 * L - 0.296 * S - 15.8
