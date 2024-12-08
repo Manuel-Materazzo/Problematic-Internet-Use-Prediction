@@ -15,15 +15,16 @@ class WeightedEnsemble(Ensemble):
     def __init__(self, members: list[EnsembleMember]):
         super().__init__(members)
 
-    def post_validation_callback(self, X: DataFrame, y: Series):
+    def post_validation_callback(self, X: DataFrame, y: Series, oof_predictions: DataFrame):
         """
         Callback to optimize weights when done training. Do not call manually.
+        :param oof_predictions:
         :param X:
         :param y:
         :return:
         """
         print("Optimizing ensemble weights...")
-        self.__optimize_weights(X, y)
+        self._optimize_weights(X, y)
 
     def show_weights(self):
         """
@@ -42,7 +43,7 @@ class WeightedEnsemble(Ensemble):
         plt.title('Ensemble weights')
         plt.show()
 
-    def __optimize_weights(self, X: DataFrame, y: Series):
+    def _optimize_weights(self, X: DataFrame, y: Series):
         """
         Trains each model of the ensemble on half of the provided data, and calculates the optimal ensemble weights.
         :param X:
@@ -125,7 +126,8 @@ class WeightedEnsemble(Ensemble):
 
     def predict(self, X: DataFrame) -> Series:
         if len(self.weights) == 0:
-            print("No weights provided, use optimize_weights() first")
+            print("Weights are still not optimized."
+                  "This probably means the validation was skipped or the callback is set incorrectly.")
             return Series([])
 
         if len(self.models) == 0:

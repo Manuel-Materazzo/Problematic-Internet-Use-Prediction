@@ -23,6 +23,7 @@ class Ensemble(ModelInferenceWrapper):
         self.accuracy_metric = None
         self.leaderboard = None
         self.weights = None
+        self.oof_predictions = None
         self.models: list[ModelWrapper] = []
 
     def validate_models_and_show_leaderboard(self, X: DataFrame, y: Series) -> float:
@@ -36,6 +37,7 @@ class Ensemble(ModelInferenceWrapper):
         # if we didn't compute a leaderboard before
         if self.leaderboard is None:
             leaderboardList: list[LeaderboardEntry] = []
+            self.oof_predictions = DataFrame()
             # train each model in the ensemble
             for member in self.members:
                 # get the trainer and the params
@@ -60,11 +62,15 @@ class Ensemble(ModelInferenceWrapper):
                     print("Optimal hyperparams: {}".format(params))
 
                 # train model
-                accuracy, iterations, prediction_comparisons = trainer.validate_model(X, y, log_level=0, params=params, output_prediction_comparison=True)
+                accuracy, iterations, prediction_comparisons = trainer.validate_model(X, y, log_level=0, params=params,
+                                                                                      output_prediction_comparison=True)
                 # append model results to the leaderboard
                 leaderboardList.append(
                     LeaderboardEntry(model_name=trainer.get_model_name(), accuracy=accuracy, iterations=iterations)
                 )
+
+                # append predictions to the out of fold predictions dataframe
+                self.oof_predictions[trainer.get_model_name()] = prediction_comparisons['predictions']
 
             self.leaderboard: DataFrame = DataFrame.from_records(leaderboardList)
             self.leaderboard.sort_values('accuracy', ascending=True, inplace=True)
@@ -73,7 +79,7 @@ class Ensemble(ModelInferenceWrapper):
         print(self.leaderboard)
 
         # do the callback, in order to execute whatever post-processing is needed by child classes
-        self.post_validation_callback(X, y)
+        self.post_validation_callback(X, y, self.oof_predictions)
 
         # return mean accuracy
         return np.mean(self.leaderboard['accuracy'])
@@ -115,9 +121,10 @@ class Ensemble(ModelInferenceWrapper):
         """
 
     @abstractmethod
-    def post_validation_callback(self, X: DataFrame, y: Series):
+    def post_validation_callback(self, X: DataFrame, y: Series, oof_predictions: DataFrame):
         """
         Callback when done validating.
+        :param oof_predictions:
         :param X:
         :param y:
         :return:
