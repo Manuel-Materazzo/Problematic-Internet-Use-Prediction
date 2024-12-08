@@ -7,6 +7,7 @@ from src.enums.optimization_direction import OptimizationDirection
 from src.models.xgb_regressor import XGBRegressorWrapper
 from src.pipelines.dt_pipeline import save_data_model
 from src.pipelines.housing_prices_competition_dt_pipeline import HousingPricesCompetitionDTPipeline
+from src.preprocessors.empty_data_preprocessor import EmptyDataPreprocessor
 from src.trainers.simple_trainer import SimpleTrainer
 from src.trainers.accurate_cross_trainer import AccurateCrossTrainer
 from src.trainers.cached_accurate_cross_trainer import CachedAccurateCrossTrainer
@@ -38,8 +39,12 @@ X, y = load_data()
 print("Saving data model...")
 save_data_model(X)
 
-# instantiate data pipeline
+# instantiate data pipeline and preprocessor
+preprocessor = EmptyDataPreprocessor()
 pipeline = HousingPricesCompetitionDTPipeline(X, True)
+
+# preprocess data
+preprocessor.preprocess_data(X)
 
 # pick a model, a trainer and an optimizer
 model_type = XGBRegressorWrapper()
@@ -61,6 +66,10 @@ print()
 # fit complete_model on all data from the training data
 print("Fitting complete model...")
 complete_model = trainer.train_model(X, y, iterations=boost_rounds, params=optimized_params)
+
+# save preprocessor on target directory
+print("Saving preprocessor...")
+preprocessor.save_preprocessor()
 
 # save trained pipeline on target directory
 print("Saving pipeline...")

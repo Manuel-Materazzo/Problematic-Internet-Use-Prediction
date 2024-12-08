@@ -5,14 +5,16 @@ import pandas as pd
 from pydoc import locate
 from typing import List, Type
 from fastapi import FastAPI
-from pydantic import BaseModel, create_model
+from pydantic import create_model
 from typing import Any, Dict
 
 from pydantic.main import ModelT
 
 from src.pipelines.dt_pipeline import DTPipeline
+from src.preprocessors.data_preprocessor import DataPreprocessor
 
 model = pickle.load(open("../target/model.pkl", "rb"))
+preprocessor: DataPreprocessor = pickle.load(open("../target/preprocessor.pkl", "rb"))
 pipeline: DTPipeline = pickle.load(open("../target/pipeline.pkl", "rb"))
 
 # Load configuration file
@@ -38,6 +40,7 @@ app = FastAPI()
 @app.post("/predict", response_model=List[float])
 async def predict_post(datas: List[InputData]):
     dataframe = pd.DataFrame([data.dict() for data in datas])
+    preprocessor.preprocess_data(dataframe)
     processed_data = pipeline.transform(dataframe)
     return model.predict(processed_data).tolist()
 
