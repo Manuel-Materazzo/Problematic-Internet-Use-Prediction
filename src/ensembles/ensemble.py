@@ -39,6 +39,7 @@ class Ensemble(ModelInferenceWrapper):
             leaderboardList: list[LeaderboardEntry] = []
             self.oof_predictions = DataFrame()
             # train each model in the ensemble
+            i = 0
             for member in self.members:
                 # get the trainer and the params
                 trainer = member['trainer']
@@ -70,7 +71,8 @@ class Ensemble(ModelInferenceWrapper):
                 )
 
                 # append predictions to the out of fold predictions dataframe
-                self.oof_predictions[trainer.get_model_name()] = prediction_comparisons['predictions']
+                self.oof_predictions[trainer.get_model_name() + '_' + str(i)] = prediction_comparisons['predictions']
+                i += 1
 
             self.leaderboard: DataFrame = DataFrame.from_records(leaderboardList)
             self.leaderboard.sort_values('accuracy', ascending=True, inplace=True)
@@ -96,7 +98,6 @@ class Ensemble(ModelInferenceWrapper):
         if self.leaderboard is None:
             print("Evaluating and optimizing models...")
             self.validate_models_and_show_leaderboard(X, y)
-            return
 
         # train each model in the ensemble
         for member in self.members:

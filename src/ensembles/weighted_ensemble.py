@@ -5,7 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from functools import partial
 from pandas import DataFrame, Series
-from sklearn.model_selection import train_test_split
 
 from src.ensembles.ensemble import EnsembleMember, Ensemble
 
@@ -14,6 +13,7 @@ class WeightedEnsemble(Ensemble):
 
     def __init__(self, members: list[EnsembleMember]):
         super().__init__(members)
+        self.trials = 4000
 
     def post_validation_callback(self, X: DataFrame, y: Series, oof_predictions: DataFrame):
         """
@@ -77,7 +77,7 @@ class WeightedEnsemble(Ensemble):
             study = optuna_distributed.from_study(study)
         # define an objective and start the study
         objective_partial = partial(self._objective, real_values=real_values, predictions_array=predictions_array)
-        study.optimize(objective_partial, n_trials=4000, n_jobs=-1)
+        study.optimize(objective_partial, n_trials=self.trials, n_jobs=-1)
         # get weights
         return [study.best_params[f"weight{n}"] for n in range(len(predictions_array))]
 

@@ -11,6 +11,7 @@ class StackedEnsemble(Ensemble):
     def __init__(self, members: list[EnsembleMember]):
         super().__init__(members)
         self.meta_learner = None
+        self.trials = None
 
     def post_validation_callback(self, X: DataFrame, y: Series, oof_predictions: DataFrame):
         """
@@ -57,7 +58,7 @@ class StackedEnsemble(Ensemble):
         :param y:
         :return:
         """
-        self.meta_learner = Ridge(alpha=0.1, random_state=0)
+        self.meta_learner = Ridge(alpha=0.1, random_state=0, max_iter=self.trials)
         self.meta_learner.fit(oof_predictions, y)
 
     def predict(self, X: DataFrame) -> Series:
@@ -67,10 +68,12 @@ class StackedEnsemble(Ensemble):
 
         oof_predictions = DataFrame()
 
+        i = 0
         # for each trained model
         for model in self.models:
             # make prediction and add to the meta-features dataframe
-            oof_predictions[model.__name__] = model.predict(X)
+            oof_predictions[model.__name__ + '_' + str(i)] = model.predict(X)
+            i += 1
 
         # make meta-learner prediction on models output
         weighted_pred = self.meta_learner.predict(oof_predictions)
