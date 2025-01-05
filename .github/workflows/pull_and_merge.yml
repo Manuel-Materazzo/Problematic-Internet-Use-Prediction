@@ -39,12 +39,14 @@ jobs:
         run: |
           git checkout --theirs .
           git checkout --ours src/main.py
+          git checkout --ours src/main_ensemble.py
+          git checkout --ours src/api.py
           git checkout --ours src/pipelines/housing_prices_competition_dt_pipeline.py
           git checkout --ours resources/
           git checkout --ours .github/
           git checkout --ours README.md
           git add . 
-          git reset src/pipelines/housing_prices_competition_dt_pipeline.py resources/ .github/ README.md src/main_ensemble.py
+          git reset src/pipelines/housing_prices_competition_dt_pipeline.py resources/ .github/ README.md
 
       - name: Push changes to new branch
         continue-on-error: true
@@ -54,7 +56,7 @@ jobs:
           git branch -D conflict-resolution || true
           git checkout -b conflict-resolution
           git add .
-          git reset src/pipelines/housing_prices_competition_dt_pipeline.py resources/ .github/ README.md src/main_ensemble.py
+          git reset src/pipelines/housing_prices_competition_dt_pipeline.py resources/ .github/ README.md src/main_ensemble.py src/api.py
           git commit -m "Pull changes from BoostUtils"
           git push -u origin conflict-resolution --force
           gh auth login --with-token <<<"${{ secrets.ACTIONS_PAT }}"
