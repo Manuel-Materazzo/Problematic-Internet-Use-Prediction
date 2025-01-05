@@ -1,17 +1,15 @@
-
-from sklearn.ensemble import HistGradientBoostingRegressor
-
+from pytorch_tabnet.tab_model import TabNetRegressor
 from src.enums.objective import Objective
-from src.models.hgb_regressor import HGBRegressorWrapper
+from src.models.tabnet_regressor import TabNetRegressorWrapper
 from tests.data_load import load_regression_data
 from tests.models.model_wrapper_base import ModelWrapperBase
 
 
-class TestHgbRegresor(ModelWrapperBase):
+class TestTabnetRegressor(ModelWrapperBase):
 
     @classmethod
     def setUpClass(cls):
         cls.X, cls.y = load_regression_data()
-        cls.model = HGBRegressorWrapper(early_stopping_rounds=1)
-        cls.base_model = HistGradientBoostingRegressor
+        cls.model = TabNetRegressorWrapper(early_stopping_rounds=1)
+        cls.base_model = TabNetRegressor
         cls.objective = Objective.REGRESSION

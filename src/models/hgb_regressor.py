@@ -1,23 +1,33 @@
+import sklearn
 import pandas as pd
 from pandas import DataFrame
 from hyperopt import hp
+from packaging.version import Version
 
-from src.enums.objective import Objective
-from src.models.model_wrapper import ModelWrapper
-from sklearn.ensemble import HistGradientBoostingRegressor
-from sklearn.inspection import permutation_importance
+if Version(sklearn.__version__) >= Version('1.5.2'):
+    disabled = False
+    from src.enums.objective import Objective
+    from src.models.model_wrapper import ModelWrapper
+    from sklearn.inspection import permutation_importance
+    from sklearn.ensemble import HistGradientBoostingRegressor
+else:
+    disabled = True
 
+version_mismatch = "ERROR: HistGradientBoostingRegressor requires Sklearn >= 1.5.2"
 
 class HGBRegressorWrapper(ModelWrapper):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, early_stopping_rounds=10):
+        super().__init__(early_stopping_rounds=early_stopping_rounds)
         self.importances = None
 
     def get_objective(self) -> Objective:
         return Objective.REGRESSION
 
     def get_base_model(self, iterations, params):
+        if disabled:
+            print(version_mismatch)
+            return None
         params.update({
             'random_state': 0,
         })
@@ -66,16 +76,25 @@ class HGBRegressorWrapper(ModelWrapper):
         }
 
     def fit(self, X, y, iterations, params=None):
+        if disabled:
+            print(version_mismatch)
+            return None
+
         self.train_until_optimal(X, None, y, None, params=params)
 
     def train_until_optimal(self, train_X, validation_X, train_y, validation_y, params=None):
+
+        if disabled:
+            print(version_mismatch)
+            return
+
         params = params or {}
         params = params.copy()
         params.update({
             'random_state': 0,
             'max_iter': 2000,
             'early_stopping': True,
-            'n_iter_no_change': 10
+            'n_iter_no_change': self.early_stopping_rounds
         })
 
         self.model: HistGradientBoostingRegressor = HistGradientBoostingRegressor(
@@ -88,12 +107,20 @@ class HGBRegressorWrapper(ModelWrapper):
         self.importances = permutation_importance(self.model, train_X, train_y, n_repeats=10, random_state=0)
 
     def predict(self, X) -> any:
+        if disabled:
+            print(version_mismatch)
+            return None
+
         return self.model.predict(X)
 
     def predict_proba(self, X):
         print("ERROR: predict_proba called on a regression model")
 
     def get_best_iteration(self) -> int:
+        if disabled:
+            print(version_mismatch)
+            return 0
+
         return self.model.n_iter_
 
     def get_loss(self) -> dict[str, dict[str, list[float]]]:

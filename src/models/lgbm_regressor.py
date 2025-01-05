@@ -9,8 +9,8 @@ from src.models.model_wrapper import ModelWrapper
 
 class LGBMRegressorWrapper(ModelWrapper):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, early_stopping_rounds=10):
+        super().__init__(early_stopping_rounds=early_stopping_rounds)
 
     def get_objective(self) -> Objective:
         return Objective.REGRESSION
@@ -73,10 +73,8 @@ class LGBMRegressorWrapper(ModelWrapper):
             "min_child_samples": hp.quniform("min_child_samples", 5, 100, 1),
             "subsample": hp.uniform("subsample", 0.5, 1.0),
             "colsample_bytree": hp.uniform("colsample_bytree", 0.5, 1.0),
-            # "reg_alpha": trial.suggest_loguniform("reg_alpha", 1e-3, 10.0), # yun confirmation
-            # "reg_lambda": trial.suggest_loguniform("reg_lambda", 1e-3, 10.0), # yun confirmation
-            'reg_alpha': hp.uniform('reg_alpha', 0, 10),
-            'reg_lambda': hp.uniform('reg_lambda', 0, 1)
+            "reg_alpha": hp.loguniform("reg_alpha", 1e-3, 10.0),
+            "reg_lambda": hp.loguniform("reg_lambda", 1e-3, 10.0),
         }
 
     def fit(self, X, y, iterations, params=None):

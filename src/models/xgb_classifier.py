@@ -9,8 +9,8 @@ from src.models.model_wrapper import ModelWrapper
 
 class XGBClassifierWrapper(ModelWrapper):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, early_stopping_rounds=10):
+        super().__init__(early_stopping_rounds=early_stopping_rounds)
 
     def get_objective(self) -> Objective:
         return Objective.CLASSIFICATION
@@ -34,7 +34,6 @@ class XGBClassifierWrapper(ModelWrapper):
             'gamma': 0,
             'subsample': 0.8,
             'colsample_bytree': 0.8,
-            'scale_pos_weight': 1,
             'n_jobs': -1
         }
 
@@ -91,7 +90,7 @@ class XGBClassifierWrapper(ModelWrapper):
         params.update({
             'random_state': 0,
             'n_estimators': 2000,
-            'early_stopping_rounds': 5,
+            'early_stopping_rounds': self.early_stopping_rounds,
         })
         self.model: XGBClassifier = XGBClassifier(
             **params
