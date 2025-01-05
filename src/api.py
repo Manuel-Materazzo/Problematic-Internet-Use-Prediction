@@ -10,6 +10,7 @@ from typing import Any, Dict
 
 from pydantic.main import ModelT
 
+from src.main import calculate_sii
 from src.pipelines.dt_pipeline import DTPipeline
 from src.preprocessors.data_preprocessor import DataPreprocessor
 
@@ -42,7 +43,10 @@ async def predict_post(datas: List[InputData]):
     dataframe = pd.DataFrame([data.dict() for data in datas])
     preprocessor.preprocess_data(dataframe)
     processed_data = pipeline.transform(dataframe)
-    return model.predict(processed_data).tolist()
+    # predict pciat score
+    pciat_preds = model.predict(processed_data).tolist()
+    # calculate sii
+    return calculate_sii(pciat_preds, 1.2525)
 
 
 if __name__ == "__main__":
