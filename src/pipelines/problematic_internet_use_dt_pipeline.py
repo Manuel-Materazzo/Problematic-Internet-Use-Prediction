@@ -7,8 +7,8 @@ from src.pipelines.dt_pipeline import DTPipeline
 
 
 class ProblematicInternetUseDTPipeline(DTPipeline):
-    def __init__(self, X: DataFrame, imputation_enabled: bool):
-        super().__init__(X, imputation_enabled)
+    def __init__(self, X: DataFrame):
+        super().__init__(X)
 
     def build_pipeline(self) -> Pipeline | ColumnTransformer:
 
