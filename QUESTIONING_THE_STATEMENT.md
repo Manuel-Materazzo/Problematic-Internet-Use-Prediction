@@ -1,48 +1,63 @@
 # Questioning the Statement
 
-## Are we really simplifying the process? 
-Data collection for the model involves professional assessments, questionnaires and specialised equipment, adding complexity rather than simplifying the process for families.
+## Introduction
+The proposed Problematic Internet Use (PIU) prediction model presents several concerning issues that need to be addressed. This analysis explores why the current approach may not achieve its intended goals and suggests areas for improvement.
 
-## Are we using the future to predict the past?
+## The "Simplification" Myth
+The project claims to simplify the assessment process for families. However, the reality is quite different. Consider what's actually required:
 
-The "relative_date_PCIAT" field in the actigraphy data is defined as the "number of days (integer) since the PCIAT test was administered (negative days indicate that the actigraphy data was collected before the test was administered)."
+- Participants must wear accelerometers for up to 81 days to collect activity data.
+- Clinical professionals need to perform specialized assessments like the Children's Global Assessment Scale.
+- Families must complete extensive questionnaires.
+- Specialized equipment is needed for data collection.
 
-Only 59 actigraphy files contain data with relative_date_PCIAT < 0, whereas most of the files have some data with relative_date_PCIAT > 0.
+This raises an important question: How is adding all these requirements making anything simpler for families or clinicians?
 
-This indicates that data collected after the Severity Impairment Index (SII) was observed is being used. In other words, future data is being used to predict past events.
+## Using Tomorrow to Predict Yesterday
 
-Deploying a model trained on such predictors in a real-world setting could be problematic.
 
-## Is a PIU Prediction Model Redundant with Internet Use as an Input?
-Problematic Internet use (PIU) is defined as the use of the Internet that creates psychological, social, school and/or work difficulties in a person's life.
+There's a fundamental problem with the timing of data collection. The model often uses data collected after the PCIAT test to make its predictions. This is like using tomorrow's weather to predict if it rained today – it simply doesn't make sense in practice.
 
-So you can't have PIU without excessive Internet use and without health or social problems.<br>
-I wonder what exactly is the need for a Severity Impairment Index (SII) prediction model that relies on features such as "Internet usage" (hours spent online per day)?<br>
-If we need to collect internet usage and health-related data to make predictions, then we're already measuring what we're trying to predict.
 
-In practical terms:
+- Only 59 actigraphy files contain data from before the PCIAT test.
+- Most files include data collected after determining the Severity Impairment Index.
 
-- **Patients with high Internet use and health problems**: We can already suspect problematic Internet use without needing a model, and include in the treatment plan not only medications for the health condition(s), but also recommendations for reducing Internet use and healthy lifestyles.
+This approach will be problematic in real-world applications.
 
-- **Patients with health problems but low Internet use**: We can infer that their health problems have other causes and focus on diagnosing and treating them, again without the help of the model. Similarly, patients with low physical activity and unhealthy lifestyles need advice on both.
+## Why Build a Model to Tell Us What We Already Know?
+
+There's a circular logic problem here.<br>
+We're defining PIU as:
+1. Excessive Internet use.
+2. Related health or social problems.
+
+Then we're collecting data about... Internet use and health problems to predict PIU. If we already need to measure these factors to make predictions, what additional value does the model provide?
+
+Think about it this way:
+- If someone shows high Internet use and health problems, we can already suspect PIU.
+- If someone has health problems but low Internet use, we can focus on other potential causes.
+- Either way, the model isn't really telling us anything we don't already know from the input data.
 
 Self-reported Internet use can be inaccurate, but without additional characteristics related to Internet use to train a model, we can't properly diagnose PIU. 
 
 Furthermore, associations found between Internet use and health problems do not prove causation. The root cause might be poor health leading to increased internet use rather than the internet use causing health problems.
 
-## Is the Dataset Really Useful?
+## The Dataset: Missing the Mark
 
 The problem statement says that the goal is "to detect early indicators of problematic Internet and technology use."
 
 Given that, PIU reflect the negative consequences of Internet use (when Internet use begins to cause problems), it seems logical to study early signs of PIU in a population of participants who use the Internet more than average.<br>
 This would mean recognizing subtle shifts in behavior, physical activity, or psychological well-being that could signal the onset of problematic internet use before it leads to significant impairment.
 
-However, the dataset has significant limitations:
-- **40% of the participants were not affected by Internet use**
-- **31% were not assessed**
-- **Only ~10% are moderately to severely impaired** (307 participants scored 0 on all PCIAT questions)
-- **38.5% of the participants in the training dataset use the internet less than an hour a day**
-- A notable proportion of participants with high SII scores use the internet less than an hour a day (**21.55% with SII = 2**, moderately impaired by problematic internet use, and **14.7% with SII = 3**, severely impaired)
+The dataset has serious problems that undermine its usefulness:
+- **40% of the participants were not affected by Internet use**.
+- **31% were not assessed**.
+- **Only ~10% are moderately to severely impaired** (307 participants scored 0 on all PCIAT questions).
+- A surprising **38.5% of the participants in the training dataset use the internet less than an hour a day**.
+
+Most puzzling is that many participants marked as having severe PIU barely use the Internet:
+- **21.55% of those rated as "moderately impaired" use the Internet less than an hour daily**.
+- **14.7% of those rated as "severely impaired" also report minimal Internet use**.
 
 ![sii_and_internet_usage.png](resources/sii_and_internet_usage.png)
 
@@ -54,21 +69,41 @@ Including such a large proportion of people who spend so little time online when
 Internet usage data should not be used as a feature for this task, but rather as a condition that participants must meet in order to be included in the study.<br>
 This way, we could develop a model to predict whether these individuals show signs of impairment and how severe that impairment is. This would be more consistent with the goals of detecting problematic Internet use.
 
-## Biased data of an unreliable questionnaire
 
-The PCIAT questionnaire (used to derive the SII) appears designed to measure the emotional and social impacts associated with internet use (emotional dependence on the internet, social isolation, neglect of responsibilities, and the impact of internet use on relationships and mood).<br>
-However, parents' perceptions are naturally biased and influenced by various factors such as their own internet habits, cultural attitudes, or their expectations about how their children should behave.
+## Questionable Questionnaire
+
+The PCIAT questionnaire, which determines the severity scores, has significant problems:
+
+### Age Doesn't Add Up
+The questionnaire asks about:
+- Household chores (Do 5-year-olds have chores?)
+- Academic impact (What about pre-schoolers or adults?)
+- Email and phone calls from "online friends" (For young children?)
+- Internet time limits (Should this apply to adults?)
+
+Questions not applicable to a participant’s age could lead to skewed or irrelevant responses. 
+All of these challenges the construct validity of SII.
+
+### Parents' Perspective Problems
+Parent-reported assessments can be skewed by:
+- Their own Internet habits
+- Cultural views about technology
+- What they think "normal" child behavior should be
+- Normal teenage development being mistaken for Internet-related problems
 
 Can spending less than an hour a day online lead to problems such as emotional distress, neglect of duties, or withdrawal from family? It's unlikely.<br>
 The presence of this in the data suggests respondents are not being honest in answering the PCIAT questions, or SII scores are being influenced by factors unrelated to PIU.
 
-Adolescence is a time of identity formation, evolving peer relationships, and a search for independence, which can amplify behaviors like mood swings, disobedience, and impulsivity.<br>
-Consequently, the SII may be capturing these broader developmental behaviors rather than internet use specifically.
+## The Real Issue
 
-Additionally, The applicability of the questionnaire across the age range is questionable. For example:
-- A 5-7-year-old may not have household chores, as this depends on cultural norms.
-- The question about academic impact may not apply to younger children who are not yet in school or graduated adults.
-- Email use and receiving phone calls from "online friends" seem out of context for young children too.
-- Questions about reaction to the time allowed to spend on the internet (there are at least 3 of them) are not applicable to adults.
+We're not actually predicting Internet-related problems – we're predicting how people will answer a questionable survey. The model is being trained on subjective opinions rather than objective measures of impairment.
 
-Questions not applicable to a participant’s age could lead to skewed or irrelevant responses. All of these challenges the construct validity of SII and considers whether it accurately measures PIU or is affected by other behavioral factors.
+## Moving Forward
+To make this research truly useful, we would need to:
+1. Focus on regular Internet users rather than including those who barely use it.
+2. Create separate assessments for different age groups.
+3. Develop objective measures of impairment.
+4. Only use data collected before making predictions.
+5. Rethink how we measure PIU itself.
+
+These changes would help create a model that actually serves its intended purpose: identifying potential problematic Internet use before it becomes severe.
