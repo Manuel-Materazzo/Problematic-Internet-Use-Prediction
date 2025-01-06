@@ -133,3 +133,42 @@ The feature importance graph highlights the most influential factors in predicti
 us to identify key contributors and understand which variables have the most significant impact on our model's
 predictions.
 ![Feature Importance Graph](resources/importance.png)
+
+## 🚀 Getting Started
+
+### 🌐 Live Preview
+
+Check out the live preview on [Render](https://problematic-internet-use-latest.onrender.com/docs) and try out inference.\
+Note: The live preview will cold-start as you enter the link, it could take up to 5min to fully load.
+
+### 🐳 Docker prebuilt
+
+1. **Pull the Docker Image**:
+   ```sh
+   docker pull ghcr.io/manuel-materazzo/problematic-internet-use:latest
+    ```
+2. **Run the Container**:
+   ```sh
+   docker run -d -p 8080:80 manuel-materazzo/problematic-internet-use
+    ```
+3. **Access the API**: Navigate to `http://localhost:8080/docs` or `http://localhost:8080/redoc` to explore the
+   interactive API documentation and start making predictions!
+
+### 🐳🔧 Docker compose self-build
+
+1. **Run docker compose**:
+   ```sh
+   docker-compose up
+   ```
+
+### 📦 Manual installation
+
+1. **Clone BoostUtils repository**:
+   ```sh
+   git clone https://github.com/Manuel-Materazzo/Problematic-Internet-Use-Prediction.git
+   cd Problematic-Internet-Use-Prediction
+   ```
+2. **Install the required dependencies**:
+   ```sh
+   pip install -r requirements.txt
+   ```
