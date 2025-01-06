@@ -69,15 +69,17 @@ X, y = load_data()
 print("Saving data model...")
 save_data_model(X)
 
-# instantiate data pipeline and preprocessor
-preprocessor = ProblematicInternetUsagePreprocessor()
-pipeline = ProblematicInternetUseDTPipeline(X)
-
 # extract the regression target
 pciat_regression_y = X['PCIAT_PCIAT_Total']
 
+# instantiate data preprocessor
+preprocessor = ProblematicInternetUsagePreprocessor()
+
 # preprocess data
 preprocessor.preprocess_data(X)
+
+# instantiate data pipeline
+pipeline = ProblematicInternetUseDTPipeline(X)
 
 # pick a model, and a trainer
 model_type = XGBRegressorWrapper(early_stopping_rounds=50)
