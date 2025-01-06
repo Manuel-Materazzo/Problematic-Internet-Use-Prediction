@@ -3,11 +3,11 @@ from sdv.single_table import GaussianCopulaSynthesizer
 import pandas as pd
 
 # Sample DataFrame
-original_data = pd.read_csv('../resources/train.csv')
+original_data = pd.read_csv('../resources/cmi-problematic-internet-usage/train.csv')
 
 # Create metadata
 metadata = Metadata()
-metadata.detect_from_dataframe(data=original_data)
+metadata.detect_table_from_dataframe('table', original_data)
 
 # Initialize the synthesizer with the metadata
 synthesizer = GaussianCopulaSynthesizer(metadata)
