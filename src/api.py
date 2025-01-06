@@ -10,7 +10,6 @@ from typing import Any, Dict
 
 from pydantic.main import ModelT
 
-from src.main import calculate_sii
 from src.pipelines.dt_pipeline import DTPipeline
 from src.preprocessors.data_preprocessor import DataPreprocessor
 
@@ -21,6 +20,13 @@ pipeline: DTPipeline = pickle.load(open("../target/pipeline.pkl", "rb"))
 # Load configuration file
 with open('../target/data-model.json', 'r') as f:
     config = json.load(f)
+
+
+def calculate_sii(pciat_scores, weight):
+    # define a utility method to calculate sii
+    pciat_scores = pciat_scores * weight
+    bins = pd.cut(pciat_scores, bins=[-float('inf'), 30, 50, 80, float('inf')], labels=[0, 1, 2, 3], right=False)
+    return bins.astype(int)
 
 
 def create_pydantic_data_model(model_config: Dict[str, Any]) -> Type[ModelT]:
