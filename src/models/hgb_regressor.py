@@ -15,10 +15,12 @@ else:
 
 version_mismatch = "ERROR: HistGradientBoostingRegressor requires Sklearn >= 1.5.2"
 
+
 class HGBRegressorWrapper(ModelWrapper):
 
-    def __init__(self, early_stopping_rounds=10):
+    def __init__(self, early_stopping_rounds=10, permutation_importance_repeats=10):
         super().__init__(early_stopping_rounds=early_stopping_rounds)
+        self.permutation_importance_repeats = permutation_importance_repeats
         self.importances = None
 
     def get_objective(self) -> Objective:
@@ -26,8 +28,8 @@ class HGBRegressorWrapper(ModelWrapper):
 
     def get_base_model(self, iterations, params):
         if disabled:
-            print(version_mismatch)
-            return None
+            raise RuntimeError(version_mismatch)
+        params = params.copy()
         params.update({
             'random_state': 0,
         })
@@ -57,7 +59,7 @@ class HGBRegressorWrapper(ModelWrapper):
             },
             {
                 'recalibrate_iterations': False,
-                'max_bins': [255, 300, 400, 500]
+                'max_bins': [50, 100, 150, 200, 255]
             },
             {
                 'recalibrate_iterations': False,
@@ -77,16 +79,14 @@ class HGBRegressorWrapper(ModelWrapper):
 
     def fit(self, X, y, iterations, params=None):
         if disabled:
-            print(version_mismatch)
-            return None
+            raise RuntimeError(version_mismatch)
 
         self.train_until_optimal(X, None, y, None, params=params)
 
     def train_until_optimal(self, train_X, validation_X, train_y, validation_y, params=None):
 
         if disabled:
-            print(version_mismatch)
-            return
+            raise RuntimeError(version_mismatch)
 
         params = params or {}
         params = params.copy()
@@ -104,40 +104,39 @@ class HGBRegressorWrapper(ModelWrapper):
         # and won't need validation sets for early stopping.
         # Avoid merging in validation_X and validation_y, as it will cause Train data leakage when cross validating.
         self.model.fit(train_X, train_y)
-        self.importances = permutation_importance(self.model, train_X, train_y, n_repeats=10, random_state=0)
+        self.importances = permutation_importance(self.model, train_X, train_y,
+                                                  n_repeats=self.permutation_importance_repeats, random_state=0)
 
     def predict(self, X) -> any:
         if disabled:
-            print(version_mismatch)
-            return None
+            raise RuntimeError(version_mismatch)
 
         return self.model.predict(X)
 
     def predict_proba(self, X):
-        print("ERROR: predict_proba called on a regression model")
+        raise NotImplementedError("predict_proba is not supported on regression models")
 
     def get_best_iteration(self) -> int:
         if disabled:
-            print(version_mismatch)
-            return 0
+            raise RuntimeError(version_mismatch)
 
         return self.model.n_iter_
 
     def get_loss(self) -> dict[str, dict[str, list[float]]]:
         if self.model is None:
-            print("ERROR: No model has been fitted")
-            return {}
+            raise ValueError("No model has been fitted")
 
+        # validation_score_ contains negative loss values; abs() converts to positive.
+        # Scores are normalized to keep the loss plot scale consistent with other model wrappers.
         return {
             'validation_0': {
-                'rmse': abs(self.model.validation_score_) / 10000
+                'rmse': list(abs(score) for score in self.model.validation_score_)
             }
         }
 
     def get_feature_importance(self, features) -> DataFrame:
         if self.importances is None:
-            print("ERROR: No model has been fitted")
-            return pd.DataFrame()
+            raise ValueError("No model has been fitted")
 
         # sort and merge importances and column names into a dataframe
         feature_importances = sorted(zip(self.importances.importances_mean, features), reverse=True)

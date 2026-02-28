@@ -6,13 +6,14 @@ from src.enums.accuracy_metric import AccuracyMetric
 from src.models.model_wrapper import ModelWrapper
 from src.pipelines.dt_pipeline import DTPipeline
 from src.trainers.trainer import Trainer
+from src.utils.logger import log
 
 
 class SimpleTrainer(Trainer):
 
     def __init__(self, pipeline: DTPipeline, model_wrapper: ModelWrapper, metric: AccuracyMetric = AccuracyMetric.MAE,
-                 grouping_columns: list[str] = None):
-        super().__init__(pipeline, model_wrapper, metric=metric, grouping_columns=grouping_columns)
+                 grouping_columns: list[str] = None, n_splits: int = 5):
+        super().__init__(pipeline, model_wrapper, metric=metric, grouping_columns=grouping_columns, n_splits=n_splits)
 
     def validate_model(self, X: DataFrame, y: Series, log_level=1, iterations=None, params=None,
                        output_prediction_comparison=False) -> (float, int, DataFrame):
@@ -39,7 +40,7 @@ class SimpleTrainer(Trainer):
         # Calculate accuracy
         accuracy = self.calculate_accuracy(predictions, val_y)
         if log_level > 0:
-            print("Validation {}: {}".format(self.metric.value, accuracy))
+            log.result("Validation {}".format(self.metric.value), accuracy)
 
         # create a dataframe with comparison
         if output_prediction_comparison:

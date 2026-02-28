@@ -6,7 +6,7 @@ from hyperopt import hp
 from pytorch_tabnet.tab_model import TabNetRegressor
 from src.enums.objective import Objective
 from src.models.model_wrapper import ModelWrapper
-from src.models.overrides.TabnetRegressorOverride import TabNetRegressorOverride
+from src.models.overrides.tabnet_regressor_override import TabNetRegressorOverride
 
 
 class TabNetRegressorWrapper(ModelWrapper):
@@ -19,11 +19,12 @@ class TabNetRegressorWrapper(ModelWrapper):
         return Objective.REGRESSION
 
     def get_base_model(self, iterations, params):
-
-        print("TabNet Won't work with default grid search because of the combined param n_d_n_a")
-
         # Tabnet is not compatible with pandas datasets, we'll need an override class.
-        return TabNetRegressorOverride(params)
+        params = params.copy()
+        # decouple n_d and n_a for direct construction
+        if 'n_d_n_a' in params:
+            params['n_d'] = params['n_a'] = params.pop('n_d_n_a')
+        return TabNetRegressorOverride(**params)
 
     def get_starter_params(self) -> dict:
         return {
@@ -56,7 +57,7 @@ class TabNetRegressorWrapper(ModelWrapper):
             },
             {
                 'recalibrate_iterations': True,
-                'mask_type': ["entmax", "sparsemaxor"],
+                'mask_type': ["entmax", "sparsemax"],
                 'lambda_sparse': np.logspace(-3, -1, num=5)
             }
         ]
@@ -127,7 +128,7 @@ class TabNetRegressorWrapper(ModelWrapper):
         return pd.Series(self.model.predict(X.to_numpy()).reshape(-1))
 
     def predict_proba(self, X) -> any:
-        print("ERROR: predict_proba called on a regression model")
+        raise NotImplementedError("predict_proba is not supported on regression models")
 
     def get_best_iteration(self) -> int:
         # get callbacks container, blatantly ignoring private accessor
@@ -141,8 +142,7 @@ class TabNetRegressorWrapper(ModelWrapper):
 
     def get_loss(self) -> dict[str, dict[str, list[float]]]:
         if self.model is None:
-            print("ERROR: No model has been fitted")
-            return {}
+            raise ValueError("No model has been fitted")
 
         history = self.model.history.history
         losses = [value for key, value in history.items() if 'valid_' in key]
@@ -151,8 +151,7 @@ class TabNetRegressorWrapper(ModelWrapper):
 
     def get_feature_importance(self, features) -> DataFrame:
         if self.model is None:
-            print("ERROR: No model has been fitted")
-            return pd.DataFrame()
+            raise ValueError("No model has been fitted")
 
         importances = self.model.feature_importances_
 
