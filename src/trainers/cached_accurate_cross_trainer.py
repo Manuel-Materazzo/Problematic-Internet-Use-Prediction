@@ -1,3 +1,5 @@
+import copy
+
 import pandas as pd
 from pandas import DataFrame, Series
 
@@ -21,7 +23,8 @@ class CachedAccurateCrossTrainer(Trainer):
         self.X = X
         self.y = y
         self.splits = self.__cache_splits()
-        self.trainer = AccurateCrossTrainer(pipeline, model_wrapper)
+        self.trainer = AccurateCrossTrainer(pipeline, model_wrapper, metric=metric, grouping_columns=grouping_columns,
+                                            n_splits=n_splits)
 
     def __cache_splits(self) -> list:
         """
@@ -47,17 +50,15 @@ class CachedAccurateCrossTrainer(Trainer):
         return splits
 
     def __cross_train(self, split, iterations=None, params=None,
-                      output_prediction_comparison=False) -> (int, int, DataFrame):
+                      output_prediction_comparison=False) -> tuple[int, float, DataFrame]:
 
         # if no rounds, train with early stopping
         if iterations is None:
-            self.trainer.train_model(split[0], split[2], split[1], split[3], params=params)
+            _, processed_val_X = self.trainer.train_model(split[0], split[2], split[1], split[3], params=params)
         # else train normally
         else:
             self.trainer.train_model(split[0], split[2], iterations=iterations, params=params)
-
-        # re-process val_X to obtain accuracy
-        processed_val_X = self.trainer.pipeline.transform(split[1])
+            processed_val_X = self.trainer.pipeline.transform(split[1])
 
         # Predict and calculate accuracy
         predictions = self.get_predictions(processed_val_X)
@@ -77,14 +78,16 @@ class CachedAccurateCrossTrainer(Trainer):
             return iterations, accuracy, prediction_comparison
 
     def validate_model(self, X: DataFrame, y: Series, log_level=2, iterations=None, params=None,
-                       output_prediction_comparison=False) -> (float, int, DataFrame):
+                       output_prediction_comparison=False) -> tuple[float, int, DataFrame]:
         """
-        Trains 5 Models on the provided training data by cross-validation.
+        Trains 5 Models on the provided training data by cross-validation using cached splits.
         Data is splitted into 5 folds, each model is trained on 4 folds and validated on 1 fold.
         The validation fold is always different, so we are basically training and validating over the entire dataset.
         Accuracy score and optimal iterations of each model are then meaned to get overall values.
         If no rounds are provided, the models are trained using early stopping and will return the optimal number of
         boosting rounds alongside the Accuracy.
+
+        X and y must match the data provided at initialization time, as cached splits are used.
 
         :param output_prediction_comparison: whether to output a dataframe containing predictions and actual values.
         :param X:
@@ -94,6 +97,10 @@ class CachedAccurateCrossTrainer(Trainer):
         :param params:
         :return:
         """
+        if not X.equals(self.X) or not y.equals(self.y):
+            raise ValueError("X and y must match the data provided at initialization time, "
+                             "as this trainer uses cached splits.")
+
         # Placeholder for cross-validation accuracy scores
         cv_scores = []
         best_rounds = []
@@ -101,8 +108,14 @@ class CachedAccurateCrossTrainer(Trainer):
         self.evals = []
         oof_comparisons_dataframes = []
 
+        # Deep-copy pipeline per fold to prevent data leakage across folds
+        original_pipeline = self.pipeline
+
         # Loop through each fold
         for split in self.splits:
+            pipeline_copy = copy.deepcopy(original_pipeline)
+            self.pipeline = pipeline_copy
+            self.trainer.pipeline = pipeline_copy
             # cross train
             best_iteration, accuracy, oof_prediction_comparison = self.__cross_train(split, iterations=iterations,
                                                                                      params=params,
@@ -116,14 +129,12 @@ class CachedAccurateCrossTrainer(Trainer):
             best_rounds.append(best_iteration or 0)
             cv_scores.append(accuracy)
 
-        # compute comparisons across all folds
-        if len(oof_comparisons_dataframes) > 0:
-            oof_prediction_comparisons = pd.concat(oof_comparisons_dataframes)
-        else:
-            oof_prediction_comparisons = None
+        # Restore pipeline and fit on full data for consistent post-CV state
+        self.pipeline = original_pipeline
+        self.trainer.pipeline = original_pipeline
+        self.pipeline.fit_transform(self.X)
 
         # extract evals
         self.evals = self.trainer.evals
 
-        return self._aggregate_cv_results(cv_scores, best_rounds, oof_comparisons_dataframes,
-                                             log_level, iterations, params, X, y)
+        return self._aggregate_cv_results(cv_scores, best_rounds, oof_comparisons_dataframes, log_level)
