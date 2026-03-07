@@ -1,5 +1,4 @@
 import math
-import os
 import pickle
 from pathlib import Path
 
@@ -18,18 +17,8 @@ from src.models.model_inference_wrapper import ModelInferenceWrapper
 from src.models.model_wrapper import ModelWrapper
 from src.pipelines.dt_pipeline import DTPipeline
 from abc import ABC, abstractmethod
-from scipy.stats import trim_mean
 
 from src.utils.logger import log
-
-
-def show_confusion_matrix(real_values: Series, predictions):
-    cm = confusion_matrix(real_values, predictions)
-    sns.heatmap(cm, annot=True, fmt='', cmap='Blues')
-    plt.title('Confusion Matrix')
-    plt.xlabel('Predicted')
-    plt.ylabel('Real Data')
-    plt.show()
 
 
 _TARGET_DIR = Path(__file__).resolve().parent.parent.parent / 'target'
@@ -48,14 +37,24 @@ def load_model() -> ModelInferenceWrapper:
 
 
 class Trainer(ABC):
+
+    _REGRESSION_METRICS = {AccuracyMetric.MAE, AccuracyMetric.MSE, AccuracyMetric.RMSE}
+    _CLASSIFICATION_METRICS = {AccuracyMetric.AUC, AccuracyMetric.Accuracy, AccuracyMetric.QWK}
+
     def __init__(self, pipeline: DTPipeline, model_wrapper: ModelWrapper, metric: AccuracyMetric = AccuracyMetric.MAE,
                  grouping_columns: list[str] = None, n_splits: int = 5):
+        objective = model_wrapper.get_objective()
+        if objective == Objective.REGRESSION and metric not in self._REGRESSION_METRICS:
+            raise ValueError(f"Metric {metric.value} is not compatible with {objective.value} objective")
+        if objective == Objective.CLASSIFICATION and metric not in self._CLASSIFICATION_METRICS:
+            raise ValueError(f"Metric {metric.value} is not compatible with {objective.value} objective")
+
         self.pipeline: DTPipeline = pipeline
         self.metric: AccuracyMetric = metric
         self.model_wrapper = model_wrapper
         self.grouping_columns = grouping_columns
         self.n_splits = n_splits
-        self.evals: [] = []
+        self.evals: list = []
 
     def get_pipeline(self) -> DTPipeline:
         """
@@ -82,6 +81,8 @@ class Trainer(ABC):
                 return StratifiedGroupKFold(n_splits=self.n_splits, random_state=0, shuffle=True)
             else:
                 return StratifiedKFold(n_splits=self.n_splits, random_state=0, shuffle=True)
+        else:
+            raise ValueError(f"Unsupported objective: {self.model_wrapper.get_objective()}")
 
     def show_feature_importance(self, X: DataFrame):
         # Apply the same transformations as the training process
@@ -127,7 +128,7 @@ class Trainer(ABC):
         plt.show()
 
     def train_model(self, train_X: DataFrame, train_y: Series, val_X: DataFrame = None, val_y: Series = None,
-                    iterations=1000, params=None) -> ModelWrapper:
+                    iterations=1000, params=None) -> tuple[ModelWrapper, DataFrame | None]:
         """
         Trains a Wrapped Model on the provided training data.
         When validation data is provided, the model is trained with early stopping.
@@ -137,10 +138,11 @@ class Trainer(ABC):
         :param val_X:
         :param val_y:
         :param iterations:
-        :return:
+        :return: Tuple of (trained model wrapper, processed validation data or None).
         """
         params = params or {}
         processed_train_X = self.pipeline.fit_transform(train_X)
+        processed_val_X = None
 
         # if we have validation sets, train with early stopping rounds
         if val_y is not None:
@@ -151,11 +153,11 @@ class Trainer(ABC):
         else:
             self.model_wrapper.fit(processed_train_X, train_y, iterations, params)
 
-        return self.model_wrapper
+        return self.model_wrapper, processed_val_X
 
     @abstractmethod
     def validate_model(self, X: DataFrame, y: Series, log_level=1, iterations=None, params=None,
-                       output_prediction_comparison=False) -> (float, int, DataFrame):
+                       output_prediction_comparison=False) -> tuple[float, int, DataFrame]:
         """
         Validates the model.
         :param X:
@@ -168,19 +170,14 @@ class Trainer(ABC):
         """
 
     def _aggregate_cv_results(self, cv_scores: list, best_rounds: list, oof_comparisons_dataframes: list,
-                              log_level: int, iterations, params,
-                              X: DataFrame = None, y: Series = None) -> tuple:
+                              log_level: int) -> tuple[float, int, DataFrame]:
         """
         Aggregates cross-validation results: computes mean accuracy, optimal boosting rounds,
-        logs results, and optionally re-validates with optimal iterations.
+        and logs results.
         :param cv_scores: list of accuracy scores from each fold.
         :param best_rounds: list of best iteration counts from each fold.
         :param oof_comparisons_dataframes: list of DataFrames with prediction comparisons per fold.
         :param log_level: verbosity level (0=silent, 1=summary, 2=detailed).
-        :param iterations: original iterations parameter (None means early stopping was used).
-        :param params: model parameters.
-        :param X: features DataFrame for re-validation.
-        :param y: target Series for re-validation.
         :return: Tuple of (mean_accuracy, optimal_boost_rounds, oof_prediction_comparisons).
         """
         # compute comparisons across all folds
@@ -193,7 +190,6 @@ class Trainer(ABC):
         mean_accuracy = np.mean(cv_scores)
         # Calculate optimal boosting rounds
         optimal_boost_rounds = int(np.mean(best_rounds))
-        pruned_optimal_boost_rounds = int(trim_mean(best_rounds, proportiontocut=0.1))
 
         if log_level > 0:
             log.result("Cross-Validation {}".format(self.metric.value), mean_accuracy)
@@ -201,15 +197,18 @@ class Trainer(ABC):
                 log.detail(str(cv_scores))
             log.result("Optimal iterations", optimal_boost_rounds)
             if log_level > 1:
-                log.detail("Pruned optimal iterations: {}".format(pruned_optimal_boost_rounds))
                 log.detail(str(best_rounds))
 
-        # Cross validate model with the optimal boosting round, to check on accuracy discrepancies
-        if iterations is None and log_level > 0:
-            log.info("Generating {} with optimal iterations".format(self.metric.value))
-            self.validate_model(X, y, iterations=optimal_boost_rounds, log_level=1, params=params)
-
         return mean_accuracy, optimal_boost_rounds, oof_prediction_comparisons
+
+    @staticmethod
+    def show_confusion_matrix(real_values: Series, predictions):
+        cm = confusion_matrix(real_values, predictions)
+        sns.heatmap(cm, annot=True, fmt='', cmap='Blues')
+        plt.title('Confusion Matrix')
+        plt.xlabel('Predicted')
+        plt.ylabel('Real Data')
+        plt.show()
 
     def get_predictions(self, X: DataFrame) -> Series:
         if self.metric == AccuracyMetric.AUC:
